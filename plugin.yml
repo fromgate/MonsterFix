@@ -1,0 +1,9 @@
+name: MonsterFix
+main: fromgate.mccity.monsterfix.MonsterFix
+version: 0.2.1/2
+author: fromgate, fromgate@gmail.com
+commands:
+   mfix:
+      description: MonsterFix configuration command
+      usage: |
+           /mfix help
