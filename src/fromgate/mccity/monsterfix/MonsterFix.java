@@ -28,7 +28,6 @@ package fromgate.mccity.monsterfix;
  * monsterfix.config
  * monsterfix.farmer
  * monsterfix.hugemushroom
- * monsterfix.kill (устарело)
  * monsterfix.badluck
  * monsterfix.sharpshooter
  * monsterfix.snowball
@@ -187,7 +186,6 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;

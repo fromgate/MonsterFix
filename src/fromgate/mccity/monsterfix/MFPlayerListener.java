@@ -101,7 +101,7 @@ public class MFPlayerListener implements Listener {
 	public void onPlayerJoinHIGHEST (PlayerJoinEvent event){
 		Player p = event.getPlayer();
 
-		
+
 		//Based on code provided by Galaran
 		//
 		if (plg.cfgB("jinvul")){
@@ -125,8 +125,12 @@ public class MFPlayerListener implements Listener {
 			int id2 = loc.getBlock().getRelative(0, 1, 0).getTypeId();
 			if ((plg.isIdInList(id1, plg.permblck))&&(plg.isIdInList(id2, plg.permblck))) {
 				loc.setX(loc.getBlockX()+0.5);
-				loc.setY(loc.getBlockY());
+				//loc.setY(loc.getBlockY());
 				loc.setZ(loc.getBlockZ()+0.5);
+
+				loc.setPitch(p.getLocation().getPitch());
+				loc.setYaw(p.getLocation().getYaw());
+				p.teleport(loc);
 			}
 
 
@@ -158,9 +162,7 @@ public class MFPlayerListener implements Listener {
 				else if ((loc.getZ()-loc.getBlockZ())<=0.13749) loc.setX(loc.getBlockX()+0.13);
 			}
 			 */
-			loc.setPitch(p.getLocation().getPitch());
-			loc.setYaw(p.getLocation().getYaw());
-			p.teleport(loc);
+
 		}
 
 	}
@@ -214,8 +216,8 @@ public class MFPlayerListener implements Listener {
 			}
 		}
 	}
-	
-	
+
+
 	//PlayerGameModeChangeEvent
 	@EventHandler(priority=EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onPlayerGM (PlayerGameModeChangeEvent event) {
@@ -227,7 +229,7 @@ public class MFPlayerListener implements Listener {
 			p.setSaturation(20);
 		}
 	}
-	
+
 	// переделано 20.04
 	@EventHandler(priority=EventPriority.LOW)
 	public void onEntityDamageMob (EntityDamageEvent event) {
@@ -349,8 +351,10 @@ public class MFPlayerListener implements Listener {
 
 				} else {
 					chance = plg.hsmobchance;
-					shname = prj.getShooter().getType().getName();
-					if (shname == null) shname = "Someone";
+					LivingEntity mob_shooter = prj.getShooter();
+					if (mob_shooter == null) shname = "Someone";
+					else shname = mob_shooter.getType().getName();
+					
 				}
 				if (p.hasPermission("monsterfix.badluck")) chance=chance+plg.hsbadluck;
 				if (chance<0) chance=0;
@@ -461,7 +465,7 @@ public class MFPlayerListener implements Listener {
 	@EventHandler(priority=EventPriority.LOW)
 	public void onPlayerChatEvent (PlayerChatEvent event){
 		Player p = event.getPlayer();
-		
+
 		if (plg.cpfix) event.setMessage(plg.recodeText(event.getMessage()));
 
 		if (plg.decolor||plg.chatcolor) {
@@ -476,9 +480,9 @@ public class MFPlayerListener implements Listener {
 	@EventHandler(priority=EventPriority.LOWEST)
 	public void onPlayerCommandPreprocess (PlayerCommandPreprocessEvent event){
 		Player p = event.getPlayer();
-		
+
 		if (plg.cpfix) event.setMessage(plg.recodeText(event.getMessage()));
-		
+
 		if (plg.cfgB("singlespace")){
 			String msg = event.getMessage().trim().replaceAll("\u0020{2,}", "\u0020");
 			event.setMessage(msg);
