@@ -145,12 +145,17 @@ package fromgate.mccity.monsterfix;
  *  + Дополнительный god-mode для игроков в creative
  *  + Восстановление сил при выключение из creative
  *  + Рекод текста в чате, командах, табличках
+ *
+ *  0.3.0 
+ *  + поддержка языков
+ *  + отключение торговцев-деревенщин
+ *  
  *  
  * TODO
  * 
+ * - mobrider
  * - удалялка ссылок (ммм.. нужен грамотный regexp) 
  * - разобраться с пересчетом света (трэш - факелы)
- *  * - давилка на рельсах?
  * - добить идею универсальности хранения переменных: сделать один тип переменных на все типы данных и перевести все это на хэшмэпы. тогда не будут нужны всякие промежуточные "быстрые" переменные.
  * - поддержка мультимиров
  * - - после мультмиров - управление мобами (частотой спавна, возможностью спавна) в каждом мире. 
@@ -161,7 +166,9 @@ package fromgate.mccity.monsterfix;
  * - генератор коблстоуна (нужно ли?)
  * - добавить автозакрывалку инвентаря через какое-то время
  * - регулировать время детонации криперов http://forums.bukkit.org/threads/adjustable-creeper-timer.68000/
- * - доразбираться с кактусами  
+ * - доразбираться с кактусами
+ * 
+ *   
  * 
  * 
  */
@@ -171,6 +178,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -190,7 +198,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -198,7 +205,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class MonsterFix extends JavaPlugin{
 
 
-
+	String language = "english";
 	// Кэш переменных
 	float noarmour = 0.1f;
 	float leatherarm = 0.4f;
@@ -285,7 +292,7 @@ public class MonsterFix extends JavaPlugin{
 	boolean eportperm = true;
 	boolean nport = true;
 	boolean nportperm = true;
-	ArrayList<Biome> unsnowbiome = new ArrayList<Biome>();
+	List<Biome> unsnowbiome = new ArrayList<Biome>();
 	boolean colorwool = true;
 	boolean colorwoolwhite = true;
 	boolean headshots=true;
@@ -327,6 +334,9 @@ public class MonsterFix extends JavaPlugin{
 	String cpwrong = "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ¸¨";
 	String cpright = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёЁ";
 
+	boolean mapsend = true;
+
+
 
 
 	/*
@@ -343,7 +353,7 @@ public class MonsterFix extends JavaPlugin{
 	String allowcactus="0,6,27,28,31,32,37,38,39,50,55,59,64,65,66,69,70,72,75,76,77,83,93,94,104,105,106";
 	String emptyblock = "0,6,8,9,10,11,30,31,32,37,38,39,40,50,51,55,59,63,65,66,68,69,70,72,75,76,77,83,90,93,94,104,105,106,115";
 
-	String px = ChatColor.AQUA+"[mfix] "+ChatColor.WHITE;
+
 	Random random = new Random ();
 
 	int tid_freeze =0;
@@ -361,22 +371,22 @@ public class MonsterFix extends JavaPlugin{
 
 
 
-	ArrayList<Entity> mspmobs = new ArrayList<Entity> (); // мобы из мобспавнера
-	ArrayList<Entity> mobdmg = new ArrayList<Entity> ();  // стукнутые мобы
-	ArrayList<MFTrashBlock> trashcan = new ArrayList<MFTrashBlock>(); // мусорная корзина
-	ArrayList<MFButchery> butch = new ArrayList<MFButchery>(); // скотобойни
+	List<Entity> mspmobs = new ArrayList<Entity> (); // мобы из мобспавнера
+	List<Entity> mobdmg = new ArrayList<Entity> ();  // стукнутые мобы
+	List<MFTrashBlock> trashcan = new ArrayList<MFTrashBlock>(); // мусорная корзина
+	List<MFButchery> butch = new ArrayList<MFButchery>(); // скотобойни
 	HashMap<Player, Long> openinv = new HashMap<Player, Long>(); // замороженные игроки
 	HashMap<Location,Integer> snowtrails = new HashMap<Location,Integer>(); //нарытый снег
-	ArrayList<Block> lamps = new ArrayList<Block>();
+	List<Block> lamps = new ArrayList<Block>();
 
 	Long lastdtntime = 0L; 
 
 
 	// хранилище переменных
-	ArrayList<MFInt> cfgi = new ArrayList<MFInt>();
-	ArrayList<MFBool> cfgb = new ArrayList<MFBool>();
-	ArrayList<MFStr> cfgs = new ArrayList<MFStr>();
-	ArrayList<MFFloat> cfgf = new ArrayList<MFFloat>();
+	List<MFInt> cfgi = new ArrayList<MFInt>();
+	List<MFBool> cfgb = new ArrayList<MFBool>();
+	List<MFStr> cfgs = new ArrayList<MFStr>();
+	List<MFFloat> cfgf = new ArrayList<MFFloat>();
 	HashMap<String, Boolean> cfggroup = new HashMap<String, Boolean>();
 	HashMap<String, String> perms = new HashMap<String, String>(); 
 
@@ -389,8 +399,26 @@ public class MonsterFix extends JavaPlugin{
 	private MFPlayerListener pl;
 	protected MFFreeze fl;
 	private MFCommands Commander;
-	PluginDescriptionFile des;
-	public MFUtil u;
+	protected MFUtil u;
+
+
+	public void addBool (String name, String group, boolean value, String node, String txt){
+		u.addMSG("msgb_"+name, txt);
+		cfgb.add ( new MFBool (name,group,value,node,"msgb_"+name));	
+	}
+	public void addInt (String name, String group, int value, String node, String txt){
+		u.addMSG("msgi_"+name, txt);
+		cfgi.add ( new MFInt (name,group,value,node,"msgi_"+name));	
+	}
+	public void addFloat (String name, String group, float value, String node, String txt){
+		u.addMSG("msgf_"+name, txt);
+		cfgf.add ( new MFFloat (name,group,value,node,"msgf_"+name));	
+	}
+	public void addStr (String name, String group, String value, String node, String txt){
+		u.addMSG("msgs_"+name, txt);
+		cfgs.add ( new MFStr (name,group,value,node,"msgs_"+name));	
+	}
+
 
 
 	public void InitCfg(){
@@ -398,214 +426,212 @@ public class MonsterFix extends JavaPlugin{
 		cfgi.clear();
 		cfgf.clear();
 		cfgs.clear();
+		addBool("permdrop","antifarm",false,"drop-depends-by-permissions","Drop depends by permissions");
+		addBool("msdrop","antifarm",true,"mobspawned-drop.enable","No drop from mobs from mobspawner");
+		addStr("msexcept","antifarm",msexcept,"mobspawned-drop.exception-mob-list","Mobspawned-mob list that WILL produce drop");
+		addBool("melon","antifarm",true,"melon-pumpkin-grow","Fix unlimited mellon and pumpkin grow");
+		addBool("whtfarm","antifarm",true,"wheat-farm","Fix wheat farming (turn soil to dirt)");
+		addInt("mlnchance","antifarm",25,"smet-wheat-survival-chance","Wheat, melon and pumpkin smets survival chance");
 
-		cfgb.add(new MFBool ("permdrop","antifarm",false,"drop-depends-by-permissions","Drop depends by permissions"));
-		cfgb.add(new MFBool ("msdrop","antifarm",true,"mobspawned-drop.enable","No drop from mobs from mobspawner"));
-		cfgs.add(new MFStr ("msexcept","antifarm",msexcept,"mobspawned-drop.exception-mob-list","Mobspawned-mob list that WILL produce drop"));
+		addBool("watersoil","antifarm",true,"water-soil-to-dirt","Fix wheat farming with water (turn soil to dirt)");
 
-
-
-
-		cfgb.add(new MFBool ("melon","antifarm",true,"melon-pumpkin-grow","Fix unlimited mellon and pumpkin grow"));
-		cfgb.add(new MFBool ("whtfarm","antifarm",true,"wheat-farm","Fix wheat farming (turn soil to dirt)"));
-		cfgi.add(new MFInt ("mlnchance","antifarm",25,"smet-wheat-survival-chance","Wheat, melon and pumpkin smets survival chance"));
-
-		cfgb.add(new MFBool ("watersoil","antifarm",true,"water-soil-to-dirt","Fix wheat farming with water (turn soil to dirt)"));
-
-		cfgb.add(new MFBool ("cactus","antifarm",true,"cactus-auto-farm-fix","Fix cactus auto-farming"));
-		cfgb.add(new MFBool ("mobfall","antifarm",true,"mob-first-fall-dmg","Fix mob farming (cancel damage from fist fall)"));
-		cfgs.add(new MFStr ("mfexcept","antifarm",mfexcept,"mob-first-fall-dmg.exception-mob-list","Exception list for mob fall damage fix"));
-		cfgb.add(new MFBool ("mushroom","antifarm",true,"huge-mushroom-micel-only","Huge mushroom grows only on mycelium"));
-		cfgb.add(new MFBool ("snowman","antifarm",true,"snowmain-trail.enable","Fix Snowgolem trails"));
-		cfgb.add(new MFBool ("smcrust","antifarm",true,"snowmain-trail.wait-snow-crust","Snowgolem trails are remain, but you need time before collect snowballs")); //0.1.7
-		cfgi.add(new MFInt ("smcrtime","antifarm",30,"snowmain-trail.wait-snow-crust-time","Time to wait before collect snowballs from snowman trails (seconds, rounded to tens)"));   //0.1.7
+		addBool("cactus","antifarm",true,"cactus-auto-farm-fix","Fix cactus auto-farming");
+		addBool("mobfall","antifarm",true,"mob-first-fall-dmg","Fix mob farming (cancel damage from fist fall)");
+		addStr("mfexcept","antifarm",mfexcept,"mob-first-fall-dmg.exception-mob-list","Exception list for mob fall damage fix");
+		addBool("mushroom","antifarm",true,"huge-mushroom-micel-only","Huge mushroom grows only on mycelium");
+		addBool("snowman","antifarm",true,"snowmain-trail.enable","Fix Snowgolem trails");
+		addBool("smcrust","antifarm",true,"snowmain-trail.wait-snow-crust","Snowgolem trails are remain, but you need time before collect snowballs"); //0.1.7
+		addInt("smcrtime","antifarm",30,"snowmain-trail.wait-snow-crust-time","Time to wait before collect snowballs from snowman trails (seconds, rounded to tens)");   //0.1.7
 
 
-		cfgb.add(new MFBool ("butchery","antifarm",true,"butcheries.enable","Detect and prevent butcheries (item and XP farming in builded mobspawner)"));
-		cfgi.add(new MFInt ("btchradius","antifarm",5,"butcheries.radius","Butchery radius"));
-		cfgi.add(new MFInt ("btchcount","antifarm",50,"butcheries.mob-limit","Butchery mob limit (when limit reached, item and xp drop will be disabled)"));
-		cfgb.add(new MFBool ("btchprogres","antifarm",true,"butcheries.progressive-drop-decrease","Progressive (counted by percent of limit)"));
-		cfgi.add(new MFInt ("btchpenalty","antifarm",2,"butcheries.limit-exceed-penalty","Butchery mob limit exceed penalty"));
-		cfgs.add(new MFStr ("btchexcept","antifarm",btchexcept,"butcheries.exception-mob-list","Mob exception list for butcheries"));
-		cfgb.add(new MFBool ("plrdrop","antifarm",true,"drop-only-player-killer","Drop items and XP only if mob killed by player"));
-		cfgs.add(new MFStr ("mobnodrop","antifarm",mobnodrop,"mob-with-no-drop","Mob list without any drop"));
-		cfgb.add(new MFBool ("obsigen","antifarm",true,"obsidian-generators","Fix unlimited obsidian generators"));
-		cfgb.add(new MFBool ("saveall","system",true,"save-all.enable","Periodically run save-all command"));
-		cfgi.add(new MFInt ("saveint","system",30,"save-all.time-interval","Saving-all interval (minutes)"));
-		cfgb.add(new MFBool ("savemsg","system",true,"save-all.show-message","Show saving-all message"));
-		cfgb.add(new MFBool ("saveinvclose","system",true,"save-all.close-inventories","Force players to close inventory (prevent item duping)"));
-		cfgb.add(new MFBool ("lampdebug","system",false,"lamps.debug","Debug mode for redstone lamps - disable redstone lamps switching"));
-		cfgb.add(new MFBool ("vcheck","system",false,"monsterfix.version-check","MonsterFix version update check"));
-		cfgb.add(new MFBool ("crgod","system",true,"full-god-mode-in-creative.enable","Prevent all damages in creative (usually from plugins)"));
-		cfgb.add(new MFBool ("crheal","system",true,"full-god-mode-in-creative.heal-in-creative","Heal player in creative mode (will grant full health after switching to survival)"));
+		addBool("butchery","antifarm",true,"butcheries.enable","Detect and prevent butcheries (item and XP farming in builded mobspawner)");
+		addInt("btchradius","antifarm",5,"butcheries.radius","Butchery radius");
+		addInt("btchcount","antifarm",50,"butcheries.mob-limit","Butchery mob limit (when limit reached, item and xp drop will be disabled)");
+		addBool("btchprogres","antifarm",true,"butcheries.progressive-drop-decrease","Progressive (counted by percent of limit)");
+		addInt("btchpenalty","antifarm",2,"butcheries.limit-exceed-penalty","Butchery mob limit exceed penalty");
+		addStr("btchexcept","antifarm",btchexcept,"butcheries.exception-mob-list","Mob exception list for butcheries");
+		addBool("plrdrop","antifarm",true,"drop-only-player-killer","Drop items and XP only if mob killed by player");
+		addStr("mobnodrop","antifarm",mobnodrop,"mob-with-no-drop","Mob list without any drop");
+		addBool("obsigen","antifarm",true,"obsidian-generators","Fix unlimited obsidian generators");
 
-		cfgb.add(new MFBool ("cpfix","system",false,"codepage-fix.enable","Enable codepage fix (chat and signs)"));
-		cfgs.add(new MFStr ("cpwrong","system","ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ¸¨","codepage-fix.wrong-symbols","Wrong code page symbols"));
-		cfgs.add(new MFStr ("cpright","system","АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёЁ","codepage-fix.right-symbols","Right code page symbols"));
+		addBool("saveall","system",true,"save-all.enable","Periodically run save-all command");
 
-		//protected static String RuASimbol = "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ¸¨";
+		addStr("language","system","english","language","MonsterFix translation language");
+		addInt("saveint","system",30,"save-all.time-interval","Saving-all interval (minutes)");
+		addBool("savemsg","system",true,"save-all.show-message","Show saving-all message");
+		addBool("saveinvclose","system",true,"save-all.close-inventories","Force players to close inventory (prevent item duping)");
+		addBool("lampdebug","system",false,"lamps.debug","Debug mode for redstone lamps - disable redstone lamps switching");
+		addBool("vcheck","system",false,"monsterfix.version-check","MonsterFix version update check");
+		addBool("crgod","system",true,"full-god-mode-in-creative.enable","Prevent all damages in creative (usually from plugins)");
+		addBool("crheal","system",true,"full-god-mode-in-creative.heal-in-creative","Heal player in creative mode (will grant full health after switching to survival)");
 
+		addBool("cpfix","system",false,"codepage-fix.enable","Enable codepage fix (chat and signs)");
+		addStr("cpwrong","system","ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ¸¨","codepage-fix.wrong-symbols","Wrong code page symbols");
+		addStr("cpright","system","АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёЁ","codepage-fix.right-symbols","Right code page symbols");
+
+		addBool("mapsend","system",true,"force-sending-maps","Forcing to send map data to client");
 
 		// TODO что-то нифига не работает. 		
-		//cfgb.add(new MFBool ("blocklink","system",true,"block-links-in-chat","Disable links in chat"));
-		//cfgb.add(new MFBool ("blockkill","system",true,"block-killll-command","Block command /kill"));
+		//addBool("blocklink","system",true,"block-links-in-chat","Disable links in chat"));
+		//addBool("blockkill","system",true,"block-killll-command","Block command /kill"));
 
 
-		cfgb.add(new MFBool ("singlespace","system",true,"single-spaces-only","Replace all double (treble..) spaces in typed commands with a single space"));
-		cfgb.add(new MFBool ("blockcmd","system",true,"block-commands.enable","Block commands"));
-		cfgs.add(new MFStr ("blockcmdlist","system","kill,plugins,pl,pluginlist","block-commands.list","Blocked command list"));
+		addBool("singlespace","system",true,"single-spaces-only","Replace all double (treble..) spaces in typed commands with a single space");
+		addBool("blockcmd","system",true,"block-commands.enable","Block commands");
+		addStr("blockcmdlist","system","kill,plugins,pl,pluginlist","block-commands.list","Blocked command list");
 
 		// цвет!
-		cfgb.add(new MFBool ("decolor","system",true,"colored-chat.colors-in-chat.decolorize","Decolorize chat-message received by client"));
-		cfgb.add(new MFBool ("chatcolor","system",true,"colored-chat.colors-in-chat.enable","Allow to set color in chat with &1...&f, &k in chat"));
-		cfgs.add(new MFStr ("defchatcolor","system","&a","colored-chat.colors-in-chat.default-color","Default color for chat messages"));
-		cfgb.add(new MFBool ("cmdcolor","system",true,"colored-chat.colors-in-cmd.enable","Allow to use colors in defined commands"));
-		cfgs.add(new MFStr ("cmdcolorlist","system","say,msg,tell,r","colored-chat.colors-in-cmd.list","List of command that allow to use colors"));
+		addBool("decolor","system",true,"colored-chat.colors-in-chat.decolorize","Decolorize chat-message received by client");
+		addBool("chatcolor","system",true,"colored-chat.colors-in-chat.enable","Allow to set color in chat with &1...&f, &k in chat");
+		addStr("defchatcolor","system","&a","colored-chat.colors-in-chat.default-color","Default color for chat messages");
+		addBool("cmdcolor","system",true,"colored-chat.colors-in-cmd.enable","Allow to use colors in defined commands");
+		addStr("cmdcolorlist","system","say,msg,tell,r","colored-chat.colors-in-cmd.list","List of command that allow to use colors");
 
-		//cfgb.add(new MFBool ("sbc","anticheat",true,"send-block-codes","Block CJB and Zombe mod cheats"));
-		cfgb.add(new MFBool ("boat","anticheat",true,"boat-fix","Fix anywhere boat placing"));
+		//addBool("sbc","anticheat",true,"send-block-codes","Block CJB and Zombe mod cheats"));
+		addBool("boat","anticheat",true,"boat-fix","Fix anywhere boat placing");
 		//центирорвание игрока - НЕДОДЕЛАНО! - стекла, ршётки 
-		
 
-		cfgb.add(new MFBool ("jpcenter","anticheat",true,"on-join-player-coordinates-fix","Сenter player relative to block on which it stands"));
+
+		addBool("jpcenter","anticheat",true,"on-join-player-coordinates-fix","Сenter player relative to block on which it stands");
 		//антипролезалка сквозьстены
-		cfgb.add(new MFBool ("cncfreeze","anticheat",true,"freeze-after-deny.enable","Freeze player after cancelled action"));
-		cfgi.add(new MFInt ("cncfrtime","anticheat",100,"freeze-after-deny.freeze-time","Player freezing time (ms) after cancelled action"));
-		//cfgb.add(new MFBool ("sneakdoor","anticheat",true,"block-sneakers-door","Block sneaking players to pass through private doors"));
+		addBool("cncfreeze","anticheat",true,"freeze-after-deny.enable","Freeze player after cancelled action");
+		addInt("cncfrtime","anticheat",100,"freeze-after-deny.freeze-time","Player freezing time (ms) after cancelled action");
+		//addBool("sneakdoor","anticheat",true,"block-sneakers-door","Block sneaking players to pass through private doors"));
 
 		// отключение бессмертия при заходе.  Работает, спасибо Галарану :)
-		cfgb.add(new MFBool ("jinvul","anticheat",true,"on-join-invulnerability-fix.enable","Fix on-join invulnerability"));
-		cfgi.add(new MFInt ("jinvultick","anticheat",1,"on-join-invulnerability.tick-time","Invulnerability period after player join (ticks)"));
+		addBool("jinvul","anticheat",true,"on-join-invulnerability-fix.enable","Fix on-join invulnerability");
+		addInt("jinvultick","anticheat",1,"on-join-invulnerability.tick-time","Invulnerability period after player join (ticks)");
 
-		cfgb.add(new MFBool ("eptpblock","anticheat",true,"prevent-tp-into-block","Preventing teleporting into non-empty block"));
-		//cfgb.add(new MFBool ("eptpfreeze","anticheat",true,"freeze-after-ender-pearl-tp","Freeze player efter ender pearl teleportation"));
+		addBool("eptpblock","anticheat",true,"prevent-tp-into-block","Preventing teleporting into non-empty block");
+		//addBool("eptpfreeze","anticheat",true,"freeze-after-ender-pearl-tp","Freeze player efter ender pearl teleportation"));
 
-		cfgb.add(new MFBool ("unsnow","world",true,"unsnowable.enable","Prevent snowforming on specified block or in defined biomes"));
-		cfgs.add(new MFStr ("unsnowblock","world","43,20","unsnowable.blocks.block-list","Unsnowable blocks list"));
-		cfgs.add(new MFStr ("unsnowbiome","world","","unsnowable.biomes","Unsnowable biome list"));
+		addBool("unsnow","world",true,"unsnowable.enable","Prevent snowforming on specified block or in defined biomes");
+		addStr("unsnowblock","world","43,20","unsnowable.blocks.block-list","Unsnowable blocks list");
+		addStr("unsnowbiome","world","","unsnowable.biomes","Unsnowable biome list");
 
 
-		cfgb.add(new MFBool ("rmvtrash","world",true,"world-trash-remover.enable","Remove blocks placed on natural blocks"));
-		cfgi.add(new MFInt ("rmvtime","world",30,"world-trash-remover.remove-delay","Period of time (minutes) after which trash-blocks will be removed"));
-		cfgi.add(new MFInt ("rmvlevel","world",60,"world-trash-remover.level-y","The level over which the area will be cleaned"));
-		cfgs.add(new MFStr ("rmvblocks","world","58","world-trash-remover.trash-blocks","Blocks to remove from the nature"));  //58,50
-		cfgs.add(new MFStr ("rmvnatural","world","0,1,2,3,8,9,10,11,12,13,17,18,24,31,32,37,38,39,40,78,79,82,83,86,99,100,106,110,111,50,58","world-trash-remover.natural-blocks","Natural block list"));
+		addBool("rmvtrash","world",true,"world-trash-remover.enable","Remove blocks placed on natural blocks");
+		addInt("rmvtime","world",30,"world-trash-remover.remove-delay","Period of time (minutes) after which trash-blocks will be removed");
+		addInt("rmvlevel","world",60,"world-trash-remover.level-y","The level over which the area will be cleaned");
+		addStr("rmvblocks","world","58","world-trash-remover.trash-blocks","Blocks to remove from the nature");  //58,50
+		addStr("rmvnatural","world","0,1,2,3,8,9,10,11,12,13,17,18,24,31,32,37,38,39,40,78,79,82,83,86,99,100,106,110,111,50,58","world-trash-remover.natural-blocks","Natural block list");
 
-		cfgb.add(new MFBool ("nport","world",true,"portals.nether.prevent","Prevent using Nether portals"));
-		cfgb.add(new MFBool ("nportperm","world",true,"portals.nether.use-permissions","Using permissions to accessing nether-portals"));
+		addBool("nport","world",true,"portals.nether.prevent","Prevent using Nether portals");
+		addBool("nportperm","world",true,"portals.nether.use-permissions","Using permissions to accessing nether-portals");
 
-		cfgb.add(new MFBool ("eport","world",true,"portals.ender.prevent","Prevent using End portals"));
-		cfgb.add(new MFBool ("eportperm","world",true,"portals.ender.use-permissions","Using permissions to accessing ender-portals"));
+		addBool("eport","world",true,"portals.ender.prevent","Prevent using End portals");
+		addBool("eportperm","world",true,"portals.ender.use-permissions","Using permissions to accessing ender-portals");
 
 		//0.1.8 
-		cfgb.add(new MFBool ("lamp","world",true,"lamps.enable","Allow to place turned on redstone lamps"));
+		addBool("lamp","world",true,"lamps.enable","Allow to place turned on redstone lamps");
 		//0.1.10
-		cfgb.add(new MFBool ("colorwool","world",true,"color-wool.enable","Use dyes to set color of wool blocks"));
-		cfgb.add(new MFBool ("colorwoolwhite","world",true,"color-wool.only-white","Allow to color only white wool blocks"));
+		addBool("colorwool","world",true,"color-wool.enable","Use dyes to set color of wool blocks");
+		addBool("colorwoolwhite","world",true,"color-wool.only-white","Allow to color only white wool blocks");
 
-		cfgb.add(new MFBool ("lhplace","world",true,"limit-height.enable","Height restriction for placing defined blocks"));
-		cfgb.add(new MFBool ("lhbmsg","world",true,"limit-height.show-message","Show height-limit warning message"));
-		cfgi.add(new MFInt ("lheight","world",90,"limit-height.lava","Height value to deny placing forbidden blocks"));
-		cfgs.add(new MFStr ("lhblock","world","10,11","limit-height.lava","Forbidden blocks list"));
+		addBool("lhplace","world",true,"limit-height.enable","Height restriction for placing defined blocks");
+		addBool("lhbmsg","world",true,"limit-height.show-message","Show height-limit warning message");
+		addInt("lheight","world",90,"limit-height.lava","Height value to deny placing forbidden blocks");
+		addStr("lhblock","world","10,11","limit-height.lava","Forbidden blocks list");
 
-		cfgb.add(new MFBool ("tpveject","world",true,"eject-player-from-vehicle-on-teleporting","Eject player from any vehicle when he trying to teleport"));
+		addBool("tpveject","world",true,"eject-player-from-vehicle-on-teleporting","Eject player from any vehicle when he trying to teleport");
 
 
-		//cfgb.add(new MFBool ("vines","world",true,"vines.enable","Control grow of the vines"));  //TODO
+		//addBool("vines","world",true,"vines.enable","Control grow of the vines"));  //TODO
 
-		cfgb.add(new MFBool ("warnplayer","system",true,"permissions-warning.enable","Warning player about monstefix permissions"));
-		cfgb.add(new MFBool ("warnplempty","system",true,"permissions-warning.show-empty-warning","Show empty warning about player permissions"));
+		addBool("warnplayer","system",true,"permissions-warning.enable","Warning player about monstefix permissions");
+		addBool("warnplempty","system",true,"permissions-warning.show-empty-warning","Show empty warning about player permissions");
 
-		cfgb.add(new MFBool ("snowball","gameplay",true,"snowball-place-snow","Place snow with snowball throw"));
-		cfgb.add(new MFBool ("enderpearl","gameplay",true,"block-enderpearl-tp","Prevent teleporting with enderpearl"));		
-		cfgb.add(new MFBool ("zombiedoor","gameplay",true,"zombie-break-door-fix","Prvent zombies from breaking doors"));
+		addBool("snowball","gameplay",true,"snowball-place-snow","Place snow with snowball throw");
+		addBool("enderpearl","gameplay",true,"block-enderpearl-tp","Prevent teleporting with enderpearl");		
+		addBool("zombiedoor","gameplay",true,"zombie-break-door-fix","Prvent zombies from breaking doors");
+		addBool("nomerchants","gameplay",true,"no-merchants","Stop trading with villagers");
 
 		// Хедшоты!
-		cfgb.add(new MFBool ("headshots","gameplay",true,"headshots.enable","Headshots"));
-		cfgb.add(new MFBool ("hsnpc","gameplay",true,"headshots.npc","NPC headshots"));
-		cfgi.add(new MFInt ("hschance","gameplay",30,"headshots.chance.basic","Headshot chance"));
-		cfgi.add(new MFInt ("hsbadluck","gameplay",25,"headshots.chance.badluck","Badlucker chance modifier"));
-		cfgi.add(new MFInt ("hssharp","gameplay",25,"headshots.chance.sharpshooter","Sharpshooter chance modifier"));
-		cfgi.add(new MFInt ("hsmobchance","gameplay",20,"headshots.chance.mob","Chance to receive headshot from mob"));
+		addBool("headshots","gameplay",true,"headshots.enable","Headshots");
+		addBool("hsnpc","gameplay",true,"headshots.npc","NPC headshots");
+		addInt("hschance","gameplay",30,"headshots.chance.basic","Headshot chance");
+		addInt("hsbadluck","gameplay",25,"headshots.chance.badluck","Badlucker chance modifier");
+		addInt("hssharp","gameplay",25,"headshots.chance.sharpshooter","Sharpshooter chance modifier");
+		addInt("hsmobchance","gameplay",20,"headshots.chance.mob","Chance to receive headshot from mob");
 
 		// Стрелы		
-		cfgb.add(new MFBool ("hsarrow","gameplay",true,"headshots.arrow.enable","Arrow-headshots"));
+		addBool("hsarrow","gameplay",true,"headshots.arrow.enable","Arrow-headshots");
 		//cfgs.add(new MFStr("hsadamage","gameplay","5,5,6,6,7,8","headshots.arrow.damage","Arrow damage defined by helmette (Diamond/Iron/Gold/Chain/Leahter/No helm)"));
-		cfgi.add(new MFInt ("hsadmghead","gameplay",7,"headshots.arrow.damage.head","Arrow damage (without helm)"));
-		cfgi.add(new MFInt ("hsadmghelm","gameplay",5,"headshots.arrow.damage.head","Arrow damage (head protected by helm)"));
-		cfgb.add(new MFBool ("hsadrop","gameplay",true,"headshots.arrow.helm.drop","Arrow knocks down the helmet"));
-		cfgi.add(new MFInt ("hsabreak","gameplay",20,"headshots.arrow.helm.break","Arrow breaks the helm (percent of max durability)"));
+		addInt("hsadmghead","gameplay",7,"headshots.arrow.damage.head","Arrow damage (without helm)");
+		addInt("hsadmghelm","gameplay",5,"headshots.arrow.damage.head","Arrow damage (head protected by helm)");
+		addBool("hsadrop","gameplay",true,"headshots.arrow.helm.drop","Arrow knocks down the helmet");
+		addInt("hsabreak","gameplay",20,"headshots.arrow.helm.break","Arrow breaks the helm (percent of max durability)");
 
 		//Снежки
-		cfgb.add(new MFBool ("hssnowball","gameplay",true,"headshots.snowball.enable","Snowball-headshots"));
-		cfgi.add(new MFInt ("hssbdmghead","gameplay",3,"headshots.snowball.damage.head","Snowball damage (without helm)"));
-		cfgi.add(new MFInt ("hssbdmghelm","gameplay",1,"headshots.snowball.damage.head","Snowball damage (head protected by helm)"));
-		cfgb.add(new MFBool ("hssbdrop","gameplay",false,"headshots.snowball.helm.drop","Snowball knocks down the helmet"));
-		cfgi.add(new MFInt ("hssbbreak","gameplay",5,"headshots.snowball.helm.break","Snowball breaks the helm (percent of max durability)"));
+		addBool("hssnowball","gameplay",true,"headshots.snowball.enable","Snowball-headshots");
+		addInt("hssbdmghead","gameplay",3,"headshots.snowball.damage.head","Snowball damage (without helm)");
+		addInt("hssbdmghelm","gameplay",1,"headshots.snowball.damage.head","Snowball damage (head protected by helm)");
+		addBool("hssbdrop","gameplay",false,"headshots.snowball.helm.drop","Snowball knocks down the helmet");
+		addInt("hssbbreak","gameplay",5,"headshots.snowball.helm.break","Snowball breaks the helm (percent of max durability)");
 
 		//Яйца
-		cfgb.add(new MFBool ("hsegg","gameplay",true,"headshots.egg.enable","Egg-headshots"));
-		cfgi.add(new MFInt ("hsedmghead","gameplay",2,"headshots.egg.damage.head","Egg damage (without helm)"));
-		cfgi.add(new MFInt ("hsedmghelm","gameplay",0,"headshots.egg.damage.head","Egg damage (head protected by helm)"));
-		cfgb.add(new MFBool ("hsedrop","gameplay",false,"headshots.egg.helm.drop","Egg knocks down the helmet"));
-		cfgi.add(new MFInt ("hsebreak","gameplay",0,"headshots.egg.helm.break","Egg breaks the helm (percent of max durability)"));
+		addBool("hsegg","gameplay",true,"headshots.egg.enable","Egg-headshots");
+		addInt("hsedmghead","gameplay",2,"headshots.egg.damage.head","Egg damage (without helm)");
+		addInt("hsedmghelm","gameplay",0,"headshots.egg.damage.head","Egg damage (head protected by helm)");
+		addBool("hsedrop","gameplay",false,"headshots.egg.helm.drop","Egg knocks down the helmet");
+		addInt("hsebreak","gameplay",0,"headshots.egg.helm.break","Egg breaks the helm (percent of max durability)");
 
 		//Удочка
-		cfgb.add(new MFBool ("hsfishrod","gameplay",true,"headshots.fish-rod.enable","Fishing rod headshots"));
-		cfgi.add(new MFInt ("hsfdmghead","gameplay",0,"headshots.fish-rod.damage.head","Fishing rod damage (without helm)"));
-		cfgi.add(new MFInt ("hsfdmghelm","gameplay",0,"headshots.fish-rod.damage.head","Fishing rod damage (head protected by helm)"));
-		cfgb.add(new MFBool ("hsfdrop","gameplay",true,"headshots.fish-rod.helm.drop","Fishing rod knocks down the helmet"));
-		cfgi.add(new MFInt ("hsfbreak","gameplay",0,"headshots.fish-rod.helm.break","Fishing rod breaks the helm (percent of max durability)"));
+		addBool("hsfishrod","gameplay",true,"headshots.fish-rod.enable","Fishing rod headshots");
+		addInt("hsfdmghead","gameplay",0,"headshots.fish-rod.damage.head","Fishing rod damage (without helm)");
+		addInt("hsfdmghelm","gameplay",0,"headshots.fish-rod.damage.head","Fishing rod damage (head protected by helm)");
+		addBool("hsfdrop","gameplay",true,"headshots.fish-rod.helm.drop","Fishing rod knocks down the helmet");
+		addInt("hsfbreak","gameplay",0,"headshots.fish-rod.helm.break","Fishing rod breaks the helm (percent of max durability)");
 
 
 
-		cfgb.add(new MFBool ("sprint","gameplay",true,"sprint.enable","Fix sprinting with weared armour"));
-		cfgf.add(new MFFloat ("spnoarm","gameplay",0.1f,"sprint.no-armour-mofifier","Sprinting (without armour) exhaustion modifier"));
-		cfgf.add(new MFFloat ("spleather","gameplay",0.4f,"sprint.leather-mofifier","Leather armour's exhaustion modifier"));
-		cfgf.add(new MFFloat ("spchain","gameplay",0.6f,"sprint.chainmail-mofifier","Chainmail armour's exhaustion modifier"));
-		cfgf.add(new MFFloat ("spgold","gameplay",1.0f,"sprint.gold-mofifier","Golden armour's exhaustion modifier"));
-		cfgf.add(new MFFloat ("spiron","gameplay",1.2f,"sprint.iron-mofifier","Iron armour's exhaustion modifier"));
-		cfgf.add(new MFFloat ("spdiamond","gameplay",1.5f,"sprint.diamond-mofifier","Diamond armour's exhaustion modifier"));
+		addBool("sprint","gameplay",true,"sprint.enable","Fix sprinting with weared armour");
+		addFloat("spnoarm","gameplay",0.1f,"sprint.no-armour-mofifier","Sprinting (without armour) exhaustion modifier");
+		addFloat("spleather","gameplay",0.4f,"sprint.leather-mofifier","Leather armour's exhaustion modifier");
+		addFloat("spchain","gameplay",0.6f,"sprint.chainmail-mofifier","Chainmail armour's exhaustion modifier");
+		addFloat("spgold","gameplay",1.0f,"sprint.gold-mofifier","Golden armour's exhaustion modifier");
+		addFloat("spiron","gameplay",1.2f,"sprint.iron-mofifier","Iron armour's exhaustion modifier");
+		addFloat("spdiamond","gameplay",1.5f,"sprint.diamond-mofifier","Diamond armour's exhaustion modifier");
 
-		cfgb.add(new MFBool ("sneak","gameplay",true,"sneak.enable","Fix long-time sneaking"));
-		cfgb.add(new MFBool ("sneakhrt","gameplay",true,"sneak.hurt-effect","Play hurt effect when (after long time sneaking)"));
-		cfgf.add(new MFFloat ("sneakex","gameplay",0.2f,"sneak.exhaustion-modifier","Long-time sneaking exhaustion modifier"));
+		addBool("sneak","gameplay",true,"sneak.enable","Fix long-time sneaking");
+		addBool("sneakhrt","gameplay",true,"sneak.hurt-effect","Play hurt effect when (after long time sneaking)");
+		addFloat("sneakex","gameplay",0.2f,"sneak.exhaustion-modifier","Long-time sneaking exhaustion modifier");
 
 		// highlands
-		cfgb.add(new MFBool ("highlands","gameplay",true,"highlands.enable","Hard breathe in highlands"));
-		cfgi.add(new MFInt ("hllevel","gameplay",200,"highlands.level","Highlands level height"));
-		cfgi.add(new MFInt ("hldmg","gameplay",2,"highlands.damage","Damage per second, dealt in highlands"));
-		cfgb.add(new MFBool ("hlbuild","gameplay",true,"highlands.prevent-build","Prevent build and destroy in highlands"));
-		cfgb.add(new MFBool ("hlswitch","gameplay",true,"highlands.prevent-switch","Prevent use items (levers, chest, etc...) in highlands"));
-		cfgb.add(new MFBool ("hlusesps","gameplay",true,"highlands.use-space-suit","Use space suit in highlands"));
-		cfgs.add(new MFStr ("hlspsuit","gameplay","305,304,303,302","highlands.space-suit","Armour that used as space-suit (helmet,chestplate,leggins,boots)"));
+		addBool("highlands","gameplay",true,"highlands.enable","Hard breathe in highlands");
+		addInt("hllevel","gameplay",200,"highlands.level","Highlands level height");
+		addInt("hldmg","gameplay",2,"highlands.damage","Damage per second, dealt in highlands");
+		addBool("hlbuild","gameplay",true,"highlands.prevent-build","Prevent build and destroy in highlands");
+		addBool("hlswitch","gameplay",true,"highlands.prevent-switch","Prevent use items (levers, chest, etc...) in highlands");
+		addBool("hlusesps","gameplay",true,"highlands.use-space-suit","Use space suit in highlands");
+		addStr("hlspsuit","gameplay","305,304,303,302","highlands.space-suit","Armour that used as space-suit (helmet,chestplate,leggins,boots)");
 
-		cfgb.add(new MFBool ("nohpregen","gameplay",true,"nohpregen.enable","Limit the maximum health regenerating level"));
-		cfgi.add(new MFInt ("nohpmax","gameplay",18,"nohpregen.max-hp-regen","Maximum regenerating health limit value"));
-		cfgb.add(new MFBool ("tnt","explosion",true,"explosion.tnt.enable","TNT-explosion control"));
-		cfgf.add(new MFFloat ("tntr","explosion",4f,"explosion.tnt.radius","TNT-explosion radius"));
-		cfgf.add(new MFFloat ("tntmr","explosion",6f,"explosion.tnt.max-radius","TNT-explosion maximum radius"));
-		cfgb.add(new MFBool ("tntfire","explosion",false,"explosion.tnt.fire","TNT-explosion fire"));
-		cfgb.add(new MFBool ("crp","explosion",true,"explosion.creeper.enable","Creeper explosion control"));
-		cfgf.add(new MFFloat ("crpr","explosion",3f,"explosion.creeper.radius","Creeper explosion radius"));
-		cfgf.add(new MFFloat ("crpmr","explosion",4f,"explosion.creeper.max-radius","Creeper explosion maximum radius"));
-		cfgf.add(new MFFloat ("crpmpwr","explosion",2f,"explosion.creeper.power-creeper-multiplier","Powered creeper explosion radius multiplier"));
-		cfgb.add(new MFBool ("crpfire","explosion",false,"explosion.creeper.fire","Creeper explosion fire"));
-		cfgb.add(new MFBool ("fbl","explosion",true,"explosion.fireball.enable","Ghast-fireball explosion control"));
-		cfgf.add(new MFFloat ("fblr","explosion",1f,"explosion.fireball.radius","Ghast-fireball explosion radius"));
-		cfgf.add(new MFFloat ("fblmr","explosion",2f,"explosion.fireball.max-radius","Ghast-fireball explosion maximum radius"));
-		cfgb.add(new MFBool ("fblfire","explosion",true,"explosion.fireball.fire","Ghast-fireball explosion fire"));
-		cfgb.add(new MFBool ("detonate","explosion",true,"explosion.detonate.enable","Detonate TNT in player inventory"));
-		cfgi.add(new MFInt("dexplchance","explosion",30,"explosion.detonate.expl-chance","Explossion-damage inventory detonation chance "));
-		cfgi.add(new MFInt("dfirechance","explosion",20,"explosion.detonate.fire-chance","Fire-damate inventory detonation chance"));
-		cfgi.add(new MFInt("dlighchance","explosion",30,"explosion.detonate.light-chance","Lightning-damage inventory detonation chance"));
-		cfgi.add(new MFInt("dprtime","explosion",20,"explosion.tnt.prime-time","TNT-prime time (ticks)")); //по умолчанию 80
-		cfgi.add(new MFInt("dmprtime","explosion",80,"explosion.tnt.maxi-prime-time","Maximum TNT-prime time (ticks)")); //по умолчанию 80
-		cfgi.add(new MFInt("dtnmax","explosion",3,"explosion.detonate.max-per-once","Maximum number of simultaneous TNT-detonation"));
-		cfgi.add(new MFInt("dtndelay","explosion",1500,"explosion.detonate.delay","Delay between the detonations (milliseconds)"));
+		addBool("nohpregen","gameplay",true,"nohpregen.enable","Limit the maximum health regenerating level");
+		addInt("nohpmax","gameplay",18,"nohpregen.max-hp-regen","Maximum regenerating health limit value");
+		addBool("tnt","explosion",true,"explosion.tnt.enable","TNT-explosion control");
+		addFloat("tntr","explosion",4f,"explosion.tnt.radius","TNT-explosion radius");
+		addFloat("tntmr","explosion",6f,"explosion.tnt.max-radius","TNT-explosion maximum radius");
+		addBool("tntfire","explosion",false,"explosion.tnt.fire","TNT-explosion fire");
+		addBool("crp","explosion",true,"explosion.creeper.enable","Creeper explosion control");
+		addFloat("crpr","explosion",3f,"explosion.creeper.radius","Creeper explosion radius");
+		addFloat("crpmr","explosion",4f,"explosion.creeper.max-radius","Creeper explosion maximum radius");
+		addFloat("crpmpwr","explosion",2f,"explosion.creeper.power-creeper-multiplier","Powered creeper explosion radius multiplier");
+		addBool("crpfire","explosion",false,"explosion.creeper.fire","Creeper explosion fire");
+		addBool("fbl","explosion",true,"explosion.fireball.enable","Ghast-fireball explosion control");
+		addFloat("fblr","explosion",1f,"explosion.fireball.radius","Ghast-fireball explosion radius");
+		addFloat("fblmr","explosion",2f,"explosion.fireball.max-radius","Ghast-fireball explosion maximum radius");
+		addBool("fblfire","explosion",true,"explosion.fireball.fire","Ghast-fireball explosion fire");
+		addBool("detonate","explosion",true,"explosion.detonate.enable","Detonate TNT in player inventory");
+		addInt("dexplchance","explosion",30,"explosion.detonate.expl-chance","Explossion-damage inventory detonation chance ");
+		addInt("dfirechance","explosion",20,"explosion.detonate.fire-chance","Fire-damate inventory detonation chance");
+		addInt("dlighchance","explosion",30,"explosion.detonate.light-chance","Lightning-damage inventory detonation chance");
+		addInt("dprtime","explosion",20,"explosion.tnt.prime-time","TNT-prime time (ticks)"); //по умолчанию 80
+		addInt("dmprtime","explosion",80,"explosion.tnt.maxi-prime-time","Maximum TNT-prime time (ticks)"); //по умолчанию 80
+		addInt("dtnmax","explosion",3,"explosion.detonate.max-per-once","Maximum number of simultaneous TNT-detonation");
+		addInt("dtndelay","explosion",1500,"explosion.detonate.delay","Delay between the detonations (milliseconds)");
 
 
-		cfgb.add(new MFBool ("flymode","gameplay",true,"allow-flight","Built-in fly mode"));
+		addBool("flymode","gameplay",true,"allow-flight","Built-in fly mode");
 
 
 	}
@@ -745,16 +771,13 @@ public class MonsterFix extends JavaPlugin{
 		hsfdrop=cfgB("hsfdrop");
 		hsfbreak=cfgI("hsfbreak");
 		permdrop = cfgB("permdrop");
-
-		lhplace=cfgB("lhplace");
 		lhbmsg=cfgB("lhbmsg");
 		lheight=cfgI("lheight");
 		lhblock=cfgS("lhblock");
-
 		cpfix = cfgB("cpfix");
 		cpwrong = cfgS("cpwrong");
 		cpright = cfgS("cpright");
-
+		mapsend = cfgB("mapsend");
 
 		InitBiomeList();
 
@@ -781,9 +804,8 @@ public class MonsterFix extends JavaPlugin{
 
 	public void PrintGrp (Player p, String grp){
 		if ((!grp.isEmpty())&& cfggroup.containsKey(grp)){
-			String str = ChatColor.YELLOW+"Group of options: "+ChatColor.LIGHT_PURPLE+grp+":";
+			String str  = u.MSG("grp_options",grp,'e','d'); 
 			String tstr="~";
-
 			for (int i = 0; i<cfgb.size();i++)
 				if (cfgb.get(i).grp.equalsIgnoreCase(grp))	tstr = tstr+", "+cfgB2Str(cfgb.get(i).name);
 
@@ -815,13 +837,9 @@ public class MonsterFix extends JavaPlugin{
 			tstr = tstr.replace("~, ", "~");
 			if (tstr.equalsIgnoreCase("~")) tstr = "";
 			str = str+tstr;
-
 			String [] ln = str.split("~");
-
 			p.sendMessage(ln);
-
-		} else p.sendMessage(px+ChatColor.RED+"Group "+ChatColor.DARK_RED+grp+ChatColor.RED+" not found.");
-
+		} else u.PrintMSG(p, "msg_gorupnotfound",grp,'c','4'); //	p.sendMessage(px+ChatColor.RED+"Group "+ChatColor.DARK_RED+grp+ChatColor.RED+" not found.");
 	}
 
 	@Override
@@ -832,29 +850,25 @@ public class MonsterFix extends JavaPlugin{
 
 	@Override
 	public void onEnable() {
-
+		config = getConfig();
+		language = config.getString("system.language", "english");
+		u = new MFUtil(this, false, false,language,"monsterfix","MonsterFix","mfix","&3[mfix]&a "); //проверка версий и metrics
 
 		bl = new MFBlockListener(this);
 		pl = new MFPlayerListener(this);
 		fl = new MFFreeze(this);
 
-		des = getDescription();
 
-		u = new MFUtil(this); //проверка версий и metrics
-		u.UpdateMsg();
-
-
-		log.info("MonsterFix v"+des.getVersion()+" enabled");
-
-		config = getConfig();
 		directory = getDataFolder();
-
 		if (!directory.exists()) directory.mkdir();
 
 		InitCfg();
 		FillGroups();
+		if (config.getBoolean("system.language-save", false)) u.SaveMSG();
+
 		LoadCfg();
 		SaveCfg();
+
 		UpdateFastVar();
 		Rst();
 
@@ -870,7 +884,7 @@ public class MonsterFix extends JavaPlugin{
 			MetricsLite metrics = new MetricsLite(this);
 			metrics.start();
 		} catch (IOException e) {
-			log.info("[wm] failed to submit stats to the Metrics (mcstats.org)");
+			log.info("[MonsterFix] failed to submit stats to the Metrics (mcstats.org)");
 		}
 
 
@@ -921,73 +935,40 @@ public class MonsterFix extends JavaPlugin{
 			ent.setValue(getConfig().getBoolean(ent.getKey()+".enable",true));
 		}
 
-		for (MFBool c : cfgb) c.v=getConfig().getBoolean(c.grp+"."+c.node, c.v);
+		for (MFBool c : cfgb) c.v = getConfig().getBoolean(c.grp+"."+c.node, c.v);
 		for (MFInt c : cfgi) c.v=getConfig().getInt(c.grp+"."+c.node, c.v);
 		for (MFStr c : cfgs) c.v=getConfig().getString(c.grp+"."+c.node, c.v);
-		for (MFFloat c : cfgf) c.v=(float) getConfig().getDouble(c.grp+"."+c.node, c.v);
+		for (MFFloat c : cfgf) 	c.v=(float) getConfig().getDouble(c.grp+"."+c.node, c.v);
 	}
 
 	public void SaveCfg() {
-		//config.options().header(getGroupComment());
-
-		config.options().header("MonsterFix v"+des.getVersion()+" configuration file");
-
+		config.options().header("MonsterFix v"+u.des.getVersion()+" configuration file");
 		Set<Entry<String, Boolean>> entries = cfggroup.entrySet(); 
 		Iterator<Entry<String, Boolean>> itr = entries.iterator();
 		while (itr.hasNext()){
 			Map.Entry<String, Boolean> ent = (Entry<String, Boolean>) itr.next();
 			config.set (ent.getKey()+".enable", ent.getValue());
 		}
+		for (MFBool c : cfgb) {
+			config.set(c.grp+"."+c.node+"_description",u.MSGnc(c.txt));
+			config.set(c.grp+"."+c.node,c.v);
+		}
+		for (MFInt c : cfgi) {
+			config.set(c.grp+"."+c.node+"_description",u.MSGnc(c.txt));
+			config.set(c.grp+"."+c.node,c.v);
+		}
+		for (MFStr c : cfgs) {
+			config.set(c.grp+"."+c.node+"_description",u.MSGnc(c.txt));
+			config.set(c.grp+"."+c.node,c.v);
+		}
+		for (MFFloat c : cfgf) {
+			config.set(c.grp+"."+c.node+"_description",u.MSGnc(c.txt));
+			config.set(c.grp+"."+c.node,c.v);
+		}
 
-
-		//getConfig().setComment(String key, String comment)
-
-		for (MFBool c : cfgb) config.set(c.grp+"."+c.node+"_description",c.txt);
-		for (MFBool c : cfgb) config.set(c.grp+"."+c.node,c.v);
-		for (MFInt c : cfgi) config.set(c.grp+"."+c.node+"_description",c.txt);
-		for (MFInt c : cfgi) config.set(c.grp+"."+c.node,c.v);
-		for (MFStr c : cfgs) config.set(c.grp+"."+c.node+"_description",c.txt);
-		for (MFStr c : cfgs) config.set(c.grp+"."+c.node,c.v);
-		for (MFFloat c : cfgf) config.set(c.grp+"."+c.node+"_description",c.txt);
-		for (MFFloat c : cfgf) config.set(c.grp+"."+c.node,c.v);
 		saveConfig(); 		
 	}
 
-
-
-	/*
-	 * Наверное это все-таки бесполезно в том виде в котором оно действует...
-
-	public String getGroupComment(){
-		String str ="MonsterFix Configuration \n(c)2011,2012 fromgate, fromgate@gmail.com";
-		Iterator<String> itr = cfggroup.keySet().iterator();
-		while (itr.hasNext()){
-			String grp = itr.next();
-			str = str+ "\n\n==== "+ grp+"====";
-			for (MFBool c : cfgb) 
-				if (c.grp.equalsIgnoreCase(grp)) str = str + "\n"+c.node+" : "+c.txt;
-			for (MFInt c : cfgi)
-				if (c.grp.equalsIgnoreCase(grp)) str = str + "\n"+c.node+" : "+c.txt;
-			for (MFStr c : cfgs) 
-				if (c.grp.equalsIgnoreCase(grp)) str = str + "\n"+c.node+" : "+c.txt;
-			for (MFFloat c : cfgf)
-				if (c.grp.equalsIgnoreCase(grp)) str = str + "\n"+c.node+" : "+c.txt;
-		}
-		return str;
-	}
-
-	 */
-
-
-	public String EnDis (boolean b){
-		if (b) return ChatColor.GREEN+"enabled"+ChatColor.WHITE;
-		return ChatColor.RED+"disabled"+ChatColor.WHITE;
-	}
-
-	public String EnDis (String str, boolean b){
-		if (b) return ChatColor.GREEN+str+ChatColor.WHITE;
-		return ChatColor.RED+str+ChatColor.WHITE;
-	}
 
 	public void SaveTick(){
 		if (cfgB("saveinvclose")) {
@@ -995,7 +976,8 @@ public class MonsterFix extends JavaPlugin{
 				if (p.isOnline()) p.closeInventory();
 			}
 		}
-		if (cfgB("savemsg")) this.getServer().broadcastMessage(px+ChatColor.DARK_GRAY+"saving all...");
+		if (cfgB("savemsg")) u.BC(u.MSG("msg_savingall",'f')); 
+			
 		this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "save-all");
 
 	}
@@ -1162,7 +1144,7 @@ public class MonsterFix extends JavaPlugin{
 	// Функция предназначена для снижения параноидальных проявлений у игроков
 	protected void WarnPlayer(Player p, boolean showempty){
 		if (p.isOp()) {
-			p.sendMessage(px+"You are OP, all permissions active :)");
+			u.PrintPxMSG(p, "msg_warnallperm");//		p.sendMessage(px+"You are OP, all permissions active :)");
 			return;
 		}
 		ArrayList<String> str = new ArrayList<String>();
@@ -1206,8 +1188,8 @@ public class MonsterFix extends JavaPlugin{
 				if (i==0) strout = str.get(i);
 				else strout = strout+", " + str.get(i);
 			}
-			p.sendMessage(px+"Your active MonsteFix permissions: "+ChatColor.GREEN+strout);
-		} else if (showempty) p.sendMessage(px+"You have no any active MonsteFix permissions."); 
+			u.PrintPxMSG(p, "msg_warnplayerperm", strout);// .sendMessage(px+"Your active MonsteFix permissions: "+ChatColor.GREEN+strout);
+		} else if (showempty) u.PrintPxMSG(p, "msg_warnpalyerempty"); //p.sendMessage(px+"You have no any active MonsteFix permissions."); 
 	}
 
 	protected int indexTrashBlock (Block b){
@@ -1383,12 +1365,12 @@ public class MonsterFix extends JavaPlugin{
 		if (p.hasPermission("monsterfix.chat.hidden")) str = str+"§3&k§k&k§r";
 		if (p.hasPermission("monsterfix.chat.font")) str = str+"§l&l§r§m&m§r§n&n§r";
 
-		if (str.isEmpty()) p.sendMessage(px+ChatColor.RED+"You have not any MonsterFix-chat permissions!");
+		if (str.isEmpty()) u.PrintPxMSG (p, "msg_nochatperm",'c'); 
 		else {
-			str = str+" §r§8(&r - reset)";
-			p.sendMessage(ChatColor.DARK_GREEN+"You can use in chat: ");
+			str = str+" §r§8(&r - "+u.MSG("msg_reset")+")";
+			u.PrintMSG(p, "msg_allowinchat");
 			p.sendMessage(str);
-			p.sendMessage(ChatColor.DARK_GRAY+"&r - to reset any state.");
+			//u.PrintMsg(p, ChatColor.DARK_GREEN+"&r - "+ u.MSG("msg_toreset"));
 		}
 
 	}
@@ -1465,19 +1447,13 @@ public class MonsterFix extends JavaPlugin{
 		}
 	}
 
-	/*	public boolean Freeze (Player p){
-		return Freeze (p,p.getLocation());
-	} */
-
-
-
 
 	public void ToggleFly (Player p){
 		if (p.getGameMode() == GameMode.SURVIVAL) {
 			p.setAllowFlight(!p.getAllowFlight());
 			p.setFlying(p.getAllowFlight());
-			p.sendMessage(px+"Fly-mode "+EnDis(p.getAllowFlight()));
-		} else p.sendMessage(px+" You are in creative mode and you can fly :)");
+			u.PrintEnDis (p,"msg_flymode",p.getAllowFlight());//	p.sendMessage(px+"Fly-mode "+u.EnDis(p.getAllowFlight()));
+		} else u.PrintPxMSG(p, "msg_flymodecreative"); //p.sendMessage(px+" You are in creative mode and you can fly :)");
 	}
 
 	public Biome BiomeByName (String bn){
@@ -1531,19 +1507,44 @@ public class MonsterFix extends JavaPlugin{
 		}
 		return nstr;
 	}
-	
-	/*protected void updateMaps(){
-		CraftServer server = (CraftServer) Bukkit.getServer(); 
-		
-						
-	}*/
 
-
-	public void BC (String str) {
-		Bukkit.broadcastMessage(px+str);
+	public int getIndexCfgB(String key){
+		for (int i = 0; i< cfgb.size();i++)
+			if (cfgb.get(i).name.equalsIgnoreCase(key)) return i;
+		return -1;
 	}
 
+	public int getIndexCfgS(String key){
+		for (int i = 0; i< cfgs.size();i++)
+			if (cfgs.get(i).name.equalsIgnoreCase(key)) return i;
+		return -1;
+	}
 
+	public int getIndexCfgF(String key){
+		for (int i = 0; i< cfgf.size();i++)
+			if (cfgf.get(i).name.equalsIgnoreCase(key)) return i;
+		return -1;
+	}
 
+	public int getIndexCfgI(String key){
+		for (int i = 0; i< cfgi.size();i++)
+			if (cfgi.get(i).name.equalsIgnoreCase(key)) return i;
+		return -1;
+	}
 
+	public String getDescription(String key){
+		int i = getIndexCfgB(key);
+		if (i>=0) return  "&a"+u.MSG(cfgb.get(i).txt)+"&2 "+u.EnDis(cfgb.get(i).v);
+		i = getIndexCfgI(key);
+		if (i>=0) return  "&a"+u.MSG(cfgi.get(i).txt)+"&2 "+cfgi.get(i).v;
+		i = getIndexCfgF(key);
+		if (i>=0) return  "&a"+u.MSG(cfgf.get(i).txt)+"&2 "+cfgf.get(i).v;
+		i = getIndexCfgS(key);
+		if (i>=0) return  "&a"+u.MSG(cfgs.get(i).txt)+"&2 "+cfgs.get(i).v;
+		return "&4"+u.MSG("msg_keyunknown",key,'c','4');
+	}
+
+	public void printParam(Player p, String key){
+		u.PrintPxMsg(p, getDescription (key));
+	}
 }

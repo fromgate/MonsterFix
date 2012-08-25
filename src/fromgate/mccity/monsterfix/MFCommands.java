@@ -34,11 +34,11 @@ import org.bukkit.entity.Player;
 
 public class MFCommands implements CommandExecutor{
 	MonsterFix plg;
-	String px;
+	MFUtil u;
 
 	public MFCommands (MonsterFix plg) {
 		this.plg=plg;
-		this.px = plg.px;
+		this.u = plg.u;
 	}
 
 
@@ -61,56 +61,18 @@ public class MFCommands implements CommandExecutor{
 						plg.LoadCfg();
 						plg.UpdateFastVar();
 						plg.Rst();
-						p.sendMessage(plg.px+"MonsterFix config reloaded");
+						
+						u.PrintPxMSG(p, "msg_cfgreload"); 
+						
 						return true;
 					} else if (args[0].equalsIgnoreCase("cfg")) {
-						p.sendMessage(ChatColor.GOLD+"MonsteFix "+plg.des.getVersion()+" Configuration:");
-						p.sendMessage(ChatColor.GREEN+"Mobs. M/Spawned: "+ChatColor.AQUA+Integer.toString(plg.mspmobs.size())+ChatColor.GREEN+" Damaged: "+ChatColor.AQUA+Integer.toString(plg.mobdmg.size())
-								+ChatColor.GREEN+" Butcheries: "+ChatColor.AQUA+Integer.toString(plg.butch.size()));
-						p.sendMessage(ChatColor.GREEN+"Trashcan: "+ChatColor.AQUA+Integer.toString(plg.trashcan.size())+ChatColor.GREEN+" Trails: "+ChatColor.AQUA+Integer.toString(plg.snowtrails.size())+ChatColor.GREEN+" Freezed players: "+ChatColor.AQUA+Integer.toString(plg.fl.fplayers.size()));
-
-						p.sendMessage(ChatColor.GREEN+"Threads (green - active): "+plg.EnDis("save",plg.tid_save_b)+ChatColor.GREEN+", "+plg.EnDis("mobs",plg.tid_mclear_b)+ChatColor.GREEN+", "
-								+plg.EnDis("player dmg",plg.tid_pdmg_b)+ChatColor.GREEN+", "
-								//+plg.EnDis("freezer",plg.tid_cncl_b)+ChatColor.GREEN+", "
-								+plg.EnDis("trash",plg.tid_trash_b));
-						String str = "";
-
-						Iterator<String> itr = plg.cfggroup.keySet().iterator();
-						while (itr.hasNext()){
-							String grp = itr.next();
-							if (str.isEmpty()) str = plg.EnDis(grp, plg.cfggroup.get(grp));
-							else str = str+", "+plg.EnDis(grp, plg.cfggroup.get(grp));
-						}
-
-						p.sendMessage(ChatColor.DARK_GREEN+"Groups: "+str);
-						p.sendMessage(" ");
-						p.sendMessage(ChatColor.DARK_GRAY+"Type /mfix <groupname> to see configuration of the selected group");
-						p.sendMessage(ChatColor.DARK_GRAY+"Type /mfix <groupname>=<on/off> to switch on/off all grouped features");
+						u.PrintCfg(p);
 						return true;
-						//}
 
-
-					} else if (args[0].equalsIgnoreCase("help")) { 
-
-						p.sendMessage(ChatColor.GOLD+"MonsteFix "+plg.des.getVersion()+" Help:");
-						p.sendMessage(ChatColor.AQUA+"/mfix help"+ChatColor.WHITE+" - this help");
-						p.sendMessage(ChatColor.AQUA+"/mfix cfg"+ChatColor.WHITE+" - display current configuration");
-						p.sendMessage(ChatColor.AQUA+"/mfix rst"+ChatColor.WHITE+" - reload configuration and restart plugin");
-						p.sendMessage(ChatColor.AQUA+"/mfix <parameter>"+ChatColor.WHITE+" - check variable value");
-						p.sendMessage(ChatColor.AQUA+"/mfix <parameter>=<value>"+ChatColor.WHITE+" - set the value of variable");
-						p.sendMessage(ChatColor.AQUA+"/mfix <group>"+ChatColor.WHITE+" - view group configuration and parameter list");
-						p.sendMessage(ChatColor.AQUA+"/mfix <group>=<on/off>"+ChatColor.WHITE+" - switch on/off group");
-						String str = "";
-						Iterator<String> itr = plg.cfggroup.keySet().iterator();
-						while (itr.hasNext()){
-							String grp = itr.next();
-							if (str.isEmpty()) str = plg.EnDis(grp, plg.cfggroup.get(grp));
-							else str = str+", "+plg.EnDis(grp, plg.cfggroup.get(grp));
-						}
-						p.sendMessage(ChatColor.DARK_GREEN+"Groups: "+str);
-						plg.DemoColor(p);
-
+					} else if (args[0].equalsIgnoreCase("help")) {
+						u.PrintHlp(p);
 						return true;
+
 
 					} else for (int i = 0; i< args.length;i++){
 
@@ -119,10 +81,8 @@ public class MFCommands implements CommandExecutor{
 							String grp = itr.next();
 							if (args[i].equalsIgnoreCase(grp)) {
 								cmdok=true;
-								p.sendMessage(ChatColor.GOLD+"MonsteFix "+plg.des.getVersion()+" Configuration: ");
-								p.sendMessage(plg.px+"Group "+grp+" is "+plg.EnDis(plg.cfggroup.get(grp)));
+								p.sendMessage(ChatColor.GOLD+"MonsteFix "+u.des.getVersion()+" | "+u.MSG("configuration",'6')); 
 								plg.PrintGrp(p, args[i]);
-
 							}  else if (args[i].startsWith(grp+"=")){
 								String [] ln;
 								ln = args[i].split("=");
@@ -130,7 +90,7 @@ public class MFCommands implements CommandExecutor{
 									plg.cfggroup.put(grp, ln[1].equalsIgnoreCase("on")||ln[1].equalsIgnoreCase("true")||ln[1].equalsIgnoreCase("enable"));
 								} else plg.cfggroup.put(grp, false);
 								cfgchanged = true;
-								p.sendMessage(plg.px+ChatColor.GOLD+"Group "+grp+" is "+plg.EnDis(plg.cfggroup.get(grp)));
+								u.PrintPxMsg(p, u.MSG("msg_groupendis",grp,'a','6')+" "+u.EnDis(plg.cfggroup.get(grp)));
 							}
 						}
 
@@ -139,7 +99,7 @@ public class MFCommands implements CommandExecutor{
 						for (MFBool c : plg.cfgb) {
 							if (args[i].equalsIgnoreCase(c.name)) {
 								cmdok=true;
-								p.sendMessage(plg.px+c.txt+" "+plg.EnDis(c.v));
+								u.PrintPxMsg(p, c.txt+" "+u.EnDis(c.v));
 							} else if (args[i].startsWith(c.name+"=")){
 								String [] ln;
 								ln = args[i].split("=");
@@ -147,16 +107,14 @@ public class MFCommands implements CommandExecutor{
 									c.v = ln[1].equalsIgnoreCase("on")||ln[1].equalsIgnoreCase("true")||ln[1].equalsIgnoreCase("enable");
 									cfgchanged = true;
 								} else c.v=false;
-
-								p.sendMessage(plg.px+ChatColor.GOLD+c.txt+" "+plg.EnDis(c.v));
+								plg.printParam(p, c.name);
 							}
-
 						}
 
 						for (MFInt c : plg.cfgi) {
 							if (args[i].equalsIgnoreCase(c.name)) {
 								cmdok=true;
-								p.sendMessage(plg.px+c.txt+" is set to: "+Integer.toString(c.v));
+								u.PrintPxMsg(p, c.txt+" is set to: "+Integer.toString(c.v));
 							} else if (args[i].startsWith(c.name+"=")){
 								boolean st = false;
 								String [] ln;
@@ -168,18 +126,15 @@ public class MFCommands implements CommandExecutor{
 										cfgchanged = true;
 									}
 								}
-								if (st) p.sendMessage(plg.px+ChatColor.GOLD+c.txt+" is set to: "+ChatColor.GREEN+Integer.toString(c.v));
-								else { 
-									p.sendMessage(plg.px+"Variable "+ChatColor.GREEN+c.name+ChatColor.WHITE+" was not changed.");
-									p.sendMessage(plg.px+c.txt+" is set to: "+ChatColor.GREEN+Integer.toString(c.v));
-								}
+								plg.printParam(p, c.name);
+								if (!st) u.PrintPxMSG(p, "msg_paramnotchanged"); 
 							}
 						}
 
 						for (MFStr c : plg.cfgs) {
 							if (args[i].equalsIgnoreCase(c.name)) {
 								cmdok=true;
-								p.sendMessage(plg.px+c.txt+" "+c.v);
+								u.PrintPxMSG(p, c.txt+" "+c.v);
 							} else if (args[i].startsWith(c.name+"=")){
 								boolean st = false;
 								String [] ln;
@@ -188,20 +143,16 @@ public class MFCommands implements CommandExecutor{
 									c.v = ln[1];
 									st = true;
 									cfgchanged = true;
-
 								}
-								if (st) p.sendMessage(plg.px+ChatColor.GOLD+c.txt+" "+c.v);
-								else { 
-									p.sendMessage(plg.px+"Variable "+ChatColor.GREEN+c.name+ChatColor.WHITE+" was not changed.");
-									p.sendMessage(plg.px+c.txt+" is set to: "+ChatColor.GREEN+c.v);
-								}
+								plg.printParam(p, c.name);
+								if (!st) u.PrintPxMSG(p, "msg_paramnotchanged"); 
 							}
 						}
 
 						for (MFFloat c : plg.cfgf) {
 							if (args[i].equalsIgnoreCase(c.name)) {
 								cmdok=true;
-								p.sendMessage(plg.px+c.txt+" is set to: "+Float.toString(c.v));
+								u.PrintPxMSG(p, c.txt+" "+c.v);
 							} else if (args[i].startsWith(c.name+"=")){
 								boolean st = false;
 								String [] ln;
@@ -214,11 +165,8 @@ public class MFCommands implements CommandExecutor{
 										cfgchanged = true;
 									}
 								}
-								if (st) p.sendMessage(plg.px+ChatColor.GOLD+c.txt+" is set to "+ChatColor.GREEN+Float.toString(c.v));
-								else { 
-									p.sendMessage(plg.px+"Variable "+ChatColor.GREEN+c.name+ChatColor.WHITE+" was not changed.");
-									p.sendMessage(plg.px+c.txt+" is set to: "+ChatColor.GREEN+Float.toString(c.v));
-								}
+								plg.printParam(p, c.name);
+								if (!st) u.PrintPxMSG(p, "msg_paramnotchanged"); 
 							}
 						}
 					}
@@ -232,13 +180,13 @@ public class MFCommands implements CommandExecutor{
 			} else {
 				if (args.length==1){
 					if (args[0].equalsIgnoreCase("help")){
-						if (p.hasPermission("monsterfix.fly.flymode")&&plg.cfgB("flymode")) 
-							p.sendMessage(px+"You can fly "+ChatColor.DARK_GRAY+"(/mfix fly)");
+						if (p.hasPermission("monsterfix.fly.flymode")&&plg.cfgB("flymode"))
+							u.PrintMSG(p, "msg_canfly","(/mfix fly)");
 						plg.DemoColor(p);
 						cmdok = true;					
 					} else if (args[0].equalsIgnoreCase("fly")){
 						if (p.hasPermission("monsterfix.fly.flymode")&&plg.cfgB("flymode")) plg.ToggleFly(p);
-						else p.sendMessage(plg.px+ChatColor.RED+"You cannot fly!");
+						else u.PrintMSG(p, "msg_cannotfly",'c');
 					}
 				}
 

@@ -26,10 +26,8 @@ package fromgate.mccity.monsterfix;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-
 import net.minecraft.server.EntityPlayer;
-
-import org.bukkit.ChatColor;
+import org.bukkit.Bukkit;
 import org.bukkit.EntityEffect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -44,6 +42,7 @@ import org.bukkit.entity.Egg;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fish;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -61,12 +60,16 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
-import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -75,28 +78,66 @@ import org.bukkit.inventory.ItemStack;
 
 public class MFPlayerListener implements Listener {
 	MonsterFix plg;
-	MFUtil util;
+	MFUtil u;
 
 	public MFPlayerListener(MonsterFix plg){
 		this.plg=plg;
-		this.util = plg.u;
+		this.u = plg.u;
 	}
 
-	@EventHandler(priority=EventPriority.NORMAL)
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onPlayerMove (PlayerMoveEvent event){
-		if (event.isCancelled()) return;
-
 		Player p = event.getPlayer();
 		if (plg.fixsneak) {
 			if (p.isSneaking()&&(p.getFoodLevel()<=6)&&(p.getGameMode() == GameMode.SURVIVAL)) {
 				p.setSneaking(false);
 				if (plg.sneakhrt) p.playEffect(EntityEffect.HURT);
-				p.sendMessage(ChatColor.RED+"You're exhausted and can not sneak!");
+				u.PrintMSG(p, "msg_exhausted",'c');
 			}
 		}
 	}
 
 
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onInvOpen (InventoryOpenEvent event){
+		if ((event.getInventory().getType()==InventoryType.MERCHANT)&&plg.cfgB("nomerchants"))
+			event.setCancelled(true);
+	}
+	
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlayerPickupItemEvent (PlayerPickupItemEvent event){
+		if (plg.mapsend){
+			Item item = event.getItem();
+			if (item != null){
+				ItemStack itemStack = item.getItemStack();
+				if ((itemStack != null)&&(itemStack.getType() == Material.MAP)){
+					Player p = event.getPlayer();
+					Short mapid = itemStack.getDurability();
+						p.sendMap(Bukkit.getMap(mapid));				
+				}
+			}			
+		}
+		
+
+	}
+	
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlayerItemHeld (PlayerItemHeldEvent event){
+		if (plg.mapsend){
+			Player p = event.getPlayer();
+			int itemSlot = event.getNewSlot();
+			if (itemSlot>=0){
+				ItemStack item = p.getInventory().getItem(itemSlot);
+				if ((item != null)&&(item.getType()==Material.MAP)){
+					Short mapid = p.getInventory().getItem(itemSlot).getDurability();
+					p.sendMap(Bukkit.getMap(mapid));
+				}
+			}			
+		}
+	}
+	
+
+	
 	@EventHandler(priority=EventPriority.HIGHEST)
 	public void onPlayerJoinHIGHEST (PlayerJoinEvent event){
 		Player p = event.getPlayer();
@@ -182,6 +223,12 @@ public class MFPlayerListener implements Listener {
 	@EventHandler(priority=EventPriority.LOW)
 	public void onEnderPearl (PlayerTeleportEvent event){
 		if (event.getCause()==TeleportCause.ENDER_PEARL){
+
+			if (plg.enderpearl){
+				event.setCancelled(true);
+				return;
+			}
+			
 			Location loc = event.getTo();
 			if (plg.eptpblock){
 				loc.setX(loc.getBlockX()+0.5);
@@ -230,13 +277,14 @@ public class MFPlayerListener implements Listener {
 		}
 	}
 
-	// переделано 20.04
+	
 	@EventHandler(priority=EventPriority.LOW)
 	public void onEntityDamageMob (EntityDamageEvent event) {
 		if (plg.fixmobfall){
 			Entity e = event.getEntity();
 			if (!plg.mobdmg.contains(e)){
 				if ((!(e instanceof Player))&&
+						(e.getLastDamageCause() != null)&&
 						(e.getLastDamageCause().getCause() == DamageCause.FALL)&&
 						(!plg.isStrInList(e.getType().getName(), plg.mfexcept)))
 					event.setDamage(0);
@@ -312,28 +360,29 @@ public class MFPlayerListener implements Listener {
 					else damage = plg.hsadmghead;
 					drophelm = wearhelm&&plg.hsadrop;
 					breakhelm = plg.hsabreak;
-					msg="&cYou receive a headshot from &4%shooter%";
+					msg = "msg_headshot";
+					
 				} else if (prj instanceof Snowball){
 					if (!plg.hssnowball) return;
 					if (wearhelm) damage = plg.hssbdmghelm;
 					else damage = plg.hssbdmghead;
 					drophelm = wearhelm&&plg.hssbdrop;
 					breakhelm = plg.hssbbreak;
-					msg="&cOoops! &4%shooter%&c throws a snowball in your head!";
+					msg = "msg_snowheadshot";
 				} else if (prj instanceof Egg){
 					if (!plg.hsegg) return;
 					if (wearhelm) damage = plg.hsedmghelm;
 					else damage = plg.hsedmghead;
 					drophelm = wearhelm&&plg.hsedrop;
 					breakhelm = plg.hsebreak;
-					msg="&cOoops! &4%shooter%&c throws an egg in your head!";
+					msg = "msg_eggheadshot"; 
 				} else if (prj instanceof Fish){
 					if (!plg.hsfishrod) return;
 					if (wearhelm) damage = plg.hsfdmghelm;
 					else damage = plg.hsfdmghead;
 					drophelm = wearhelm&&plg.hsfdrop;
 					breakhelm = plg.hsfbreak;
-					msg="&cOoops! &4%shooter%&c caught you on the hook!";
+					msg = "msg_hookheadshot";
 				} else return;
 
 				int chance = 0;
@@ -352,7 +401,7 @@ public class MFPlayerListener implements Listener {
 				} else {
 					chance = plg.hsmobchance;
 					LivingEntity mob_shooter = prj.getShooter();
-					if (mob_shooter == null) shname = "Someone";
+					if (mob_shooter == null) shname = u.MSGnc("someone");
 					else shname = mob_shooter.getType().getName();
 					
 				}
@@ -362,8 +411,10 @@ public class MFPlayerListener implements Listener {
 
 				if (plg.random.nextInt(100)<chance){
 					event.setDamage(damage);
-					p.sendMessage(plg.px+ChatColor.translateAlternateColorCodes('&', msg.replace("%shooter%", shname)));
-					if (shooter !=null)  shooter.sendMessage(plg.px+ChatColor.DARK_RED+"Headshot!");
+					
+					u.PrintMSG(p, msg,shname,'c','4');
+					
+					if (shooter !=null) u.PrintMSG(p, "msg_headshot!",'4'); 
 
 					if (p.getInventory().getHelmet()!=null){
 						Material item = p.getInventory().getHelmet().getType();
@@ -411,7 +462,7 @@ public class MFPlayerListener implements Listener {
 
 			if (plg.highlands&&plg.hlbuild&&(plg.CheckPlayerInHighlands(p))) {  			//&&(cb.getLocation().getBlockY()>=plg.hllevel)
 				event.setCancelled(true);
-				p.sendMessage(plg.px+"You're short of breath!");
+				u.PrintMSG(p, "msg_shortbreath"); 
 				return;
 			}
 
@@ -458,16 +509,14 @@ public class MFPlayerListener implements Listener {
 				if (tb.getType() != Material.STATIONARY_WATER) event.setCancelled(true);
 			}
 
-		} //if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
+		} 
 	}
 
 
 	@EventHandler(priority=EventPriority.LOW)
-	public void onPlayerChatEvent (PlayerChatEvent event){
+	public void onPlayerChatEvent (AsyncPlayerChatEvent event){
 		Player p = event.getPlayer();
-
 		if (plg.cpfix) event.setMessage(plg.recodeText(event.getMessage()));
-
 		if (plg.decolor||plg.chatcolor) {
 			String msg = event.getMessage();	
 			if (plg.decolor) msg = plg.deColorize(msg);
@@ -492,7 +541,7 @@ public class MFPlayerListener implements Listener {
 			String msg = event.getMessage().trim().replaceAll("\u0020{2,}", "\u0020");
 			String [] ln = msg.split(" ");
 			if((ln.length>0)&&(plg.isStrInList(ln[0].replaceFirst("/", ""), plg.cfgS("blockcmdlist")))&&(!p.hasPermission("monsterfix.command."+ln[0]))){
-				p.sendMessage(plg.px+ChatColor.RED+"You cannot execute command "+ChatColor.YELLOW+ln[0]);
+				u.PrintMSG(p,"msg_blockcmd",ln[0],'c','e'); 
 				event.setCancelled(true);
 			}
 		}
@@ -507,7 +556,6 @@ public class MFPlayerListener implements Listener {
 	}
 
 
-	// 20.04
 	@EventHandler(priority=EventPriority.MONITOR)
 	public void onCreatureSpawn (CreatureSpawnEvent event) {
 		if ((!event.isCancelled())&&(plg.msdrop)&&(event.getSpawnReason() == SpawnReason.SPAWNER)&&

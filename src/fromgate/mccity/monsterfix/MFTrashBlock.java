@@ -29,11 +29,13 @@ import org.bukkit.block.Block;
 public class MFTrashBlock {
 	Block b;
 	int health=10;
-	
+
 	public MFTrashBlock (Block b) {
 		this.b = b;
 		this.health = 10;
 	}
+	
+	
 	
 
 	

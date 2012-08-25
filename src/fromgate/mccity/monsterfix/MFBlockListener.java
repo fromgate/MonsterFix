@@ -23,7 +23,6 @@
 package fromgate.mccity.monsterfix;
 
 
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -53,8 +52,10 @@ import org.bukkit.inventory.ItemStack;
 
 public class MFBlockListener implements Listener {
 	MonsterFix plg;
+	MFUtil u;
 	MFBlockListener (MonsterFix plg) {
 		this.plg=plg;
+		this.u = plg.u;
 	}
 
 	@EventHandler(priority=EventPriority.NORMAL)
@@ -70,9 +71,8 @@ public class MFBlockListener implements Listener {
 	@EventHandler(priority=EventPriority.LOW)
 	public void onSignChange (SignChangeEvent event){
 		if (plg.cpfix)
-			for (int i = 0; i<4;i++){
+			for (int i = 0; i<4;i++)
 				if (!event.getLine(i).isEmpty()) event.setLine(i, plg.recodeText(event.getLine(i)));
-			}
 	}
 
 
@@ -86,11 +86,9 @@ public class MFBlockListener implements Listener {
 		Player p = event.getPlayer();
 		Block b = event.getBlock();
 
-		//if (event.isCancelled()) return;
-
 		if (plg.highlands&&plg.hlbuild&&(plg.CheckPlayerInHighlands(p))) {  //(event.getBlock().getLocation().getBlockY()>=plg.hllevel)&&
 			event.setCancelled(true);
-			p.sendMessage(plg.px+"You're short of breath!");
+			u.PrintMSG(p, "msg_shortbreath");
 			return;
 		}
 
@@ -108,7 +106,9 @@ public class MFBlockListener implements Listener {
 		}
 
 		if ((plg.lhplace)&&(!p.hasPermission("monsterfix.unlhblock"))&&(b.getX()>plg.lheight)&&(plg.isIdInList(b.getTypeId(), plg.lhblock))){
-			if (plg.lhbmsg) p.sendMessage(plg.px+ChatColor.RED+"You cannot place "+ChatColor.DARK_RED+b.getType().name()+" ("+b.getTypeId()+") "+ChatColor.RED+"here");
+
+			if (plg.lhbmsg)	u.PrintMSG(p, "msg_placedenied",b.getType().name(),'c','4');
+
 			event.setCancelled(true);
 			return;
 		}
@@ -142,7 +142,7 @@ public class MFBlockListener implements Listener {
 
 		if (plg.highlands&&plg.hlbuild&&(plg.CheckPlayerInHighlands(p))) { //&&(b.getLocation().getBlockY()>=plg.hllevel)
 			event.setCancelled(true);
-			p.sendMessage(plg.px+"You're short of breath!");
+			u.PrintMSG(p, "msg_shortbreath");
 		}
 
 		if ((plg.fixcactusfarm)&&(b.getType()==Material.CACTUS)&&(p.getGameMode()==GameMode.SURVIVAL)){

@@ -37,5 +37,40 @@ public class MFInt {
 		this.node=node;
 		this.txt = descr;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((grp == null) ? 0 : grp.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (!(obj instanceof MFInt))
+			return false;
+		MFInt other = (MFInt) obj;
+		if (grp == null) {
+			if (other.grp != null)
+				return false;
+		} else if (!grp.equals(other.grp))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		return true;
+	}
+
+
+		
+	
 		
 }
