@@ -149,6 +149,7 @@ package fromgate.mccity.monsterfix;
  *  0.3.0 
  *  + поддержка языков
  *  + отключение торговцев-деревенщин
+ *  + доп.отправка карт
  *  
  *  
  * TODO
@@ -456,12 +457,14 @@ public class MonsterFix extends JavaPlugin{
 
 		addBool("saveall","system",true,"save-all.enable","Periodically run save-all command");
 
-		addStr("language","system","english","language","MonsterFix translation language");
+		addStr("language","system","english","monsterfix.language","MonsterFix translation language");
+		
+		
 		addInt("saveint","system",30,"save-all.time-interval","Saving-all interval (minutes)");
 		addBool("savemsg","system",true,"save-all.show-message","Show saving-all message");
 		addBool("saveinvclose","system",true,"save-all.close-inventories","Force players to close inventory (prevent item duping)");
 		addBool("lampdebug","system",false,"lamps.debug","Debug mode for redstone lamps - disable redstone lamps switching");
-		addBool("vcheck","system",false,"monsterfix.version-check","MonsterFix version update check");
+		addBool("vcheck","system",true,"monsterfix.version-check","MonsterFix version update check");
 		addBool("crgod","system",true,"full-god-mode-in-creative.enable","Prevent all damages in creative (usually from plugins)");
 		addBool("crheal","system",true,"full-god-mode-in-creative.heal-in-creative","Heal player in creative mode (will grant full health after switching to survival)");
 
@@ -778,9 +781,7 @@ public class MonsterFix extends JavaPlugin{
 		cpwrong = cfgS("cpwrong");
 		cpright = cfgS("cpright");
 		mapsend = cfgB("mapsend");
-
 		InitBiomeList();
-
 	}
 
 
@@ -851,8 +852,11 @@ public class MonsterFix extends JavaPlugin{
 	@Override
 	public void onEnable() {
 		config = getConfig();
-		language = config.getString("system.language", "english");
-		u = new MFUtil(this, false, false,language,"monsterfix","MonsterFix","mfix","&3[mfix]&a "); //проверка версий и metrics
+		language = config.getString("system.monsterfix.language", "english");
+		
+		
+		u = new MFUtil(this, config.getBoolean("monsterfix.version-check",true),
+				false,language,"monsterfix","MonsterFix","mfix","&3[mfix]&a "); //проверка версий и metrics
 
 		bl = new MFBlockListener(this);
 		pl = new MFPlayerListener(this);
@@ -864,7 +868,7 @@ public class MonsterFix extends JavaPlugin{
 
 		InitCfg();
 		FillGroups();
-		if (config.getBoolean("system.language-save", false)) u.SaveMSG();
+		if (config.getBoolean("system.monsterfix.language-save", false)) u.SaveMSG();
 
 		LoadCfg();
 		SaveCfg();

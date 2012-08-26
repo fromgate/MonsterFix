@@ -51,7 +51,7 @@ public class MFUtil extends FGUtilCore {
 		addMSG("configuration","Configuration");
 		addMSG("msg_cfgline1","Mobs. M/Spawned: %1% Damaged: %2% Butcheries: %3%");
 		addMSG("msg_cfgline2","Trashcan: %1% Trails: %2% Freezed players: %3%");
-		addMSG("msg_cfgthreads","Threads (green - active)");
+		addMSG("msg_cfgthreads","Threads (green - active):");
 		addMSG ("save","save");
 		addMSG ("mobs","mobs");
 		addMSG ("player dmg","player dmg");
@@ -119,9 +119,8 @@ public class MFUtil extends FGUtilCore {
 		PrintMsg(p,"&6&lMonsterFix v"+des.getVersion()+" &r&6| "+MSG("configuration",'6')+"&6:");
 		PrintMSG(p, "msg_cfgline1",plg.mspmobs.size()+";"+plg.mobdmg.size()+";"+plg.butch.size()); //	p.sendMessage(ChatColor.GREEN+"Mobs. M/Spawned: "+ChatColor.AQUA+Integer.toString(plg.mspmobs.size())+ChatColor.GREEN+" Damaged: "+ChatColor.AQUA+Integer.toString(plg.mobdmg.size())+ChatColor.GREEN+" Butcheries: "+ChatColor.AQUA+Integer.toString(plg.butch.size()));
 		PrintMSG(p, "msg_cfgline2",plg.trashcan.size()+";"+plg.snowtrails.size()+";"+plg.fl.fplayers.size()); //p.sendMessage(ChatColor.GREEN+"Trashcan: "+ChatColor.AQUA+Integer.toString(plg.trashcan.size())+ChatColor.GREEN+" Trails: "+ChatColor.AQUA+Integer.toString(plg.snowtrails.size())+ChatColor.GREEN+" Freezed players: "+ChatColor.AQUA+Integer.toString(plg.fl.fplayers.size()));
-		PrintMsg(p,MSG("msg_cfgthreads")+EnDis(MSGnc("save"),plg.tid_save_b)+"&2, "+EnDis(MSGnc("mobs"),plg.tid_mclear_b)+"&2, "
+		PrintMsg(p,MSG("msg_cfgthreads")+" "+EnDis(MSGnc("save"),plg.tid_save_b)+"&2, "+EnDis(MSGnc("mobs"),plg.tid_mclear_b)+"&2, "
 				+EnDis(MSGnc("player dmg"),plg.tid_pdmg_b)+"&2, "
-				//+EnDis("freezer",plg.tid_cncl_b)+ChatColor.GREEN+"&2, "
 				+EnDis(MSGnc("trash"),plg.tid_trash_b));
 		String str = "";
 		Iterator<String> itr = plg.cfggroup.keySet().iterator();
