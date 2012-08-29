@@ -99,7 +99,7 @@ public class MFCommands implements CommandExecutor{
 						for (MFBool c : plg.cfgb) {
 							if (args[i].equalsIgnoreCase(c.name)) {
 								cmdok=true;
-								u.PrintPxMsg(p, c.txt+" "+u.EnDis(c.v));
+								plg.printParam(p, c.name);
 							} else if (args[i].startsWith(c.name+"=")){
 								String [] ln;
 								ln = args[i].split("=");
@@ -114,7 +114,7 @@ public class MFCommands implements CommandExecutor{
 						for (MFInt c : plg.cfgi) {
 							if (args[i].equalsIgnoreCase(c.name)) {
 								cmdok=true;
-								u.PrintPxMsg(p, c.txt+" is set to: "+Integer.toString(c.v));
+								plg.printParam(p, c.name);
 							} else if (args[i].startsWith(c.name+"=")){
 								boolean st = false;
 								String [] ln;
@@ -134,7 +134,7 @@ public class MFCommands implements CommandExecutor{
 						for (MFStr c : plg.cfgs) {
 							if (args[i].equalsIgnoreCase(c.name)) {
 								cmdok=true;
-								u.PrintPxMSG(p, c.txt+" "+c.v);
+								plg.printParam(p, c.name);
 							} else if (args[i].startsWith(c.name+"=")){
 								boolean st = false;
 								String [] ln;
@@ -152,7 +152,7 @@ public class MFCommands implements CommandExecutor{
 						for (MFFloat c : plg.cfgf) {
 							if (args[i].equalsIgnoreCase(c.name)) {
 								cmdok=true;
-								u.PrintPxMSG(p, c.txt+" "+c.v);
+								plg.printParam(p, c.name);
 							} else if (args[i].startsWith(c.name+"=")){
 								boolean st = false;
 								String [] ln;

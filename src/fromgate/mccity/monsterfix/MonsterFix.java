@@ -195,6 +195,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -892,6 +893,7 @@ public class MonsterFix extends JavaPlugin{
 		}
 
 
+		this.saveHlpFile();
 	}
 
 	protected void FillGroups(){
@@ -1551,4 +1553,41 @@ public class MonsterFix extends JavaPlugin{
 	public void printParam(Player p, String key){
 		u.PrintPxMsg(p, getDescription (key));
 	}
+
+	
+
+	
+	public void saveHlpFile(){
+		try {
+			YamlConfiguration hlp = new YamlConfiguration();
+			File f = new File (getDataFolder()+File.separator+"readme.txt");
+			
+
+			for (MFBool c : cfgb) {
+				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<on|off> (default: "+c.v+")");
+						
+			}
+
+			for (MFInt c : cfgi) {
+				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<integer value> (default: "+c.v+")");
+			}
+			
+			for (MFFloat c : cfgf) {
+				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<float value> (default: "+c.v+")");
+			}
+			
+			for (MFStr c : cfgs) {
+				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<string> (default: "+c.v+")");
+			}
+			
+			hlp.save(f);
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+		
+		
+		
+		
+	}
+	
 }
