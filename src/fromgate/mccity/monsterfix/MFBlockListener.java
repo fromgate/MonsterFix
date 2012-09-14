@@ -105,7 +105,7 @@ public class MFBlockListener implements Listener {
 			if (b.getRelative(BlockFace.UP).getType()== Material.REDSTONE_LAMP_ON) plg.lamps.add(b.getRelative(BlockFace.UP));
 		}
 
-		if ((plg.lhplace)&&(!p.hasPermission("monsterfix.unlhblock"))&&(b.getX()>plg.lheight)&&(plg.isIdInList(b.getTypeId(), plg.lhblock))){
+		if ((plg.lhplace)&&(!p.hasPermission("monsterfix.unlhblock"))&&(b.getY()>plg.lheight)&&(plg.isIdInList(b.getTypeId(), plg.lhblock))){
 
 			if (plg.lhbmsg)	u.PrintMSG(p, "msg_placedenied",b.getType().name(),'c','4');
 
