@@ -64,6 +64,7 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
@@ -164,7 +165,7 @@ public class MFPlayerListener implements Listener {
 			Location loc = p.getLocation(); //.getBlock().getLocation(); //.add(0.5, 0, 0.5);
 			int id1 = loc.getBlock().getTypeId();
 			int id2 = loc.getBlock().getRelative(0, 1, 0).getTypeId();
-			if ((plg.isIdInList(id1, plg.permblck))&&(plg.isIdInList(id2, plg.permblck))) {
+			if ((u.isIdInList(id1, plg.permblck))&&(u.isIdInList(id2, plg.permblck))) {
 				loc.setX(loc.getBlockX()+0.5);
 				//loc.setY(loc.getBlockY());
 				loc.setZ(loc.getBlockZ()+0.5);
@@ -234,8 +235,8 @@ public class MFPlayerListener implements Listener {
 				loc.setX(loc.getBlockX()+0.5);
 				loc.setY(loc.getBlockY());
 				loc.setZ(loc.getBlockZ()+0.5);			
-				if ((!(plg.isIdInList(loc.getBlock().getTypeId(), plg.emptyblock)))&&
-						(!(plg.isIdInList(loc.getBlock().getRelative(BlockFace.UP).getTypeId(), plg.emptyblock)))) loc = event.getFrom();
+				if ((!(u.isIdInList(loc.getBlock().getTypeId(), plg.emptyblock)))&&
+						(!(u.isIdInList(loc.getBlock().getRelative(BlockFace.UP).getTypeId(), plg.emptyblock)))) loc = event.getFrom();
 			}
 			event.setTo(loc);
 		}
@@ -286,7 +287,7 @@ public class MFPlayerListener implements Listener {
 				if ((!(e instanceof Player))&&
 						(e.getLastDamageCause() != null)&&
 						(e.getLastDamageCause().getCause() == DamageCause.FALL)&&
-						(!plg.isStrInList(e.getType().getName(), plg.mfexcept)))
+						(!u.isWordInList(e.getType().getName(), plg.mfexcept)))
 					event.setDamage(0);
 				else plg.mobdmg.add(e);
 			}
@@ -469,13 +470,13 @@ public class MFPlayerListener implements Listener {
 			//Color Woool
 			if ((plg.colorwool)&&(cb.getType()==Material.WOOL)&&(p.getItemInHand().getTypeId()==351)&&(p.hasPermission("monsterfix.colorwool")&&
 					((cb.getData()==0)||((cb.getData()>0)&&(!plg.colorwoolwhite))))){
-				if ((plg.PlaceBlock(cb, p, Material.WOOL, (byte) (15-p.getItemInHand().getData().getData()),false))&&(p.getGameMode() != GameMode.CREATIVE)){
+				if ((u.placeBlock(cb, p, Material.WOOL, (byte) (15-p.getItemInHand().getData().getData()),false))&&(p.getGameMode() != GameMode.CREATIVE)){
 					if (p.getItemInHand().getAmount()>1) p.getItemInHand().setAmount(p.getItemInHand().getAmount()-1);
 					else p.setItemInHand(new ItemStack(Material.AIR, 0));  //p.getInventory().remove(p.getItemInHand());
 				}
 			}
 
-			if ((plg.rmvtrash)&&(plg.isIdInList (cb.getTypeId(), plg.rmvblocks))&&(plg.checkTrash(cb)))	plg.AddToTrash(cb);
+			if ((plg.rmvtrash)&&(u.isItemInList (cb.getTypeId(),cb.getData(), plg.rmvblocks))&&(plg.checkTrash(cb)))	plg.AddToTrash(cb);
 
 			// Mushroom
 			if ((plg.fixmushroom)&&
@@ -494,13 +495,13 @@ public class MFPlayerListener implements Listener {
 			//Snowball
 			if ((p.getItemInHand().getType() == Material.SNOW_BALL)&&plg.snowball&&p.hasPermission("monsterfix.snowball")) {
 				Block tb = p.getTargetBlock(null, 150);
-				if ((tb.getRelative(0, 1, 0).getType()==Material.AIR)&&(plg.isIdInList(tb.getTypeId(), plg.snowballable))){
+				if ((tb.getRelative(0, 1, 0).getType()==Material.AIR)&&(u.isItemInList(tb.getTypeId(),tb.getData(), plg.snowballable))){
 					if (tb.getType()==Material.SNOW) {
 						byte sh = tb.getData();
 						sh++;
-						if (sh<7) plg.PlaceBlock(tb, p, Material.SNOW, sh,true);
-						else  plg.PlaceBlock(tb, p, Material.SNOW_BLOCK, (byte) 0,true);
-					} else plg.PlaceBlock(tb.getRelative(0, 1, 0), p, Material.SNOW, (byte)0,true);
+						if (sh<7) u.placeBlock(tb, p, Material.SNOW, sh,true);
+						else  u.placeBlock(tb, p, Material.SNOW_BLOCK, (byte) 0,true);
+					} else u.placeBlock(tb.getRelative(0, 1, 0), p, Material.SNOW, (byte)0,true);
 				}
 			}
 
@@ -540,7 +541,7 @@ public class MFPlayerListener implements Listener {
 		if (plg.cfgB("blockcmd")){
 			String msg = event.getMessage().trim().replaceAll("\u0020{2,}", "\u0020");
 			String [] ln = msg.split(" ");
-			if((ln.length>0)&&(plg.isStrInList(ln[0].replaceFirst("/", ""), plg.cfgS("blockcmdlist")))&&(!p.hasPermission("monsterfix.command."+ln[0]))){
+			if((ln.length>0)&&(u.isWordInList(ln[0].replaceFirst("/", ""), plg.cfgS("blockcmdlist")))&&(!p.hasPermission("monsterfix.command."+ln[0]))){
 				u.PrintMSG(p,"msg_blockcmd",ln[0],'c','e'); 
 				event.setCancelled(true);
 			}
@@ -549,7 +550,7 @@ public class MFPlayerListener implements Listener {
 		if (plg.cfgB("cmdcolor")){
 			String msg = event.getMessage().trim().replaceAll("\u0020{2,}", "\u0020");
 			String [] ln = msg.split(" ");
-			if((ln.length>0)&&(plg.isStrInList(ln[0].replaceFirst("/", ""), plg.cfgS("cmdcolorlist")))){
+			if((ln.length>0)&&(u.isWordInList(ln[0].replaceFirst("/", ""), plg.cfgS("cmdcolorlist")))){
 				event.setMessage(plg.Colorize(p, event.getMessage()));
 			}
 		}
@@ -559,7 +560,7 @@ public class MFPlayerListener implements Listener {
 	@EventHandler(priority=EventPriority.MONITOR)
 	public void onCreatureSpawn (CreatureSpawnEvent event) {
 		if ((!event.isCancelled())&&(plg.msdrop)&&(event.getSpawnReason() == SpawnReason.SPAWNER)&&
-				(!plg.isStrInList(event.getEntity().getType().getName(), plg.msexcept))) plg.mspmobs.add(event.getEntity());
+				(!u.isWordInList(event.getEntity().getType().getName(), plg.msexcept))) plg.mspmobs.add(event.getEntity());
 	}
 
 
@@ -574,7 +575,7 @@ public class MFPlayerListener implements Listener {
 
 		String mname = mob.getType().getName();
 
-		if (plg.isStrInList(mname, plg.mobnodrop)) clrdrp = true;
+		if (u.isWordInList(mname, plg.mobnodrop)) clrdrp = true;
 
 		// дроп только от "злонамеренных" причин
 		if (plg.plrdrop&&(!(mob.getLastDamageCause() instanceof EntityDamageByEntityEvent))) clrdrp = true;
@@ -590,8 +591,7 @@ public class MFPlayerListener implements Listener {
 		if (plg.mobdmg.contains(mob)) plg.mobdmg.remove(mob);
 
 		// скотобойни
-		//if ((plg.butchery)&&(!((!plg.btchanimal)&&((mob instanceof Pig )||(mob instanceof Cow)||(mob instanceof Sheep)||(mob instanceof Chicken))))){
-		if ((plg.butchery)&&(!plg.isStrInList(mname, plg.btchexcept))){
+		if ((plg.butchery)&&(!u.isWordInList(mname, plg.btchexcept))){
 			if (plg.btchprogres) {
 				if (plg.random.nextInt(plg.btchcount)<plg.AddButchery(event.getEntity().getLocation())) clrdrp = true;
 			} else if (plg.AddButchery(event.getEntity().getLocation())>plg.btchcount) clrdrp = true;				
@@ -621,6 +621,19 @@ public class MFPlayerListener implements Listener {
 			Player p = (Player) event.getEntity();
 			if (p.getHealth()>=plg.nohpmax) event.setCancelled(true);
 		}
+	}
+	
+	//riverfish
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlayerFish (PlayerFishEvent event){
+		if (plg.cfgB("fishfarm")&&((event.getState() == PlayerFishEvent.State.CAUGHT_FISH)||(event.getState() == PlayerFishEvent.State.CAUGHT_ENTITY))&&
+				(!u.rollDiceChance(plg.cfgI("fishchance")))&&
+				(!u.isWordInList(event.getPlayer().getLocation().getBlock().getBiome().name().toLowerCase(), plg.cfgS("fishbiomes")))){
+			if (plg.cfgB("fishwarn")) u.PrintMSG(event.getPlayer(), "msg_fishfarm",'c');
+			event.setCancelled(true);
+		}
+			
+		
 	}
 
 }

@@ -45,6 +45,7 @@ import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityBreakDoorEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -92,7 +93,7 @@ public class MFBlockListener implements Listener {
 			return;
 		}
 
-		if ((plg.rmvtrash)&&(plg.isIdInList (b.getTypeId(), plg.rmvblocks))&&(plg.checkTrash(b))&&(b.getY()>=plg.rmvlevel)) 
+		if ((plg.rmvtrash)&&(u.isItemInList (b.getTypeId(), b.getData(), plg.rmvblocks))&&(plg.checkTrash(b))&&(b.getY()>=plg.rmvlevel)) 
 			plg.AddToTrash(b);
 
 		if (plg.lamp&&p.hasPermission("monsterfix.lamp.place")) {
@@ -105,7 +106,10 @@ public class MFBlockListener implements Listener {
 			if (b.getRelative(BlockFace.UP).getType()== Material.REDSTONE_LAMP_ON) plg.lamps.add(b.getRelative(BlockFace.UP));
 		}
 
-		if ((plg.lhplace)&&(!p.hasPermission("monsterfix.unlhblock"))&&(b.getY()>plg.lheight)&&(plg.isIdInList(b.getTypeId(), plg.lhblock))){
+		if ((plg.lhplace)&&
+				(!p.hasPermission("monsterfix.unlhblock"))&&
+				(b.getY()>plg.lheight)&&
+				(u.isItemInList(b.getTypeId(),b.getData(), plg.lhblock))){
 
 			if (plg.lhbmsg)	u.PrintMSG(p, "msg_placedenied",b.getType().name(),'c','4');
 
@@ -121,10 +125,10 @@ public class MFBlockListener implements Listener {
 	public void onBlockPhysics(BlockPhysicsEvent event) {
 		Block b = event.getBlock();
 		if ((plg.fixcactusfarm)&&(b.getType()==Material.CACTUS)) {
-			if (plg.isIdInList(b.getRelative(1, 0, 0).getTypeId(), plg.allowcactus)||
-					plg.isIdInList(b.getRelative(-1, 0, 0).getTypeId(), plg.allowcactus)||
-					plg.isIdInList(b.getRelative(0, 0, 1).getTypeId(), plg.allowcactus)||
-					plg.isIdInList(b.getRelative(0, 0, -1).getTypeId(), plg.allowcactus)) {
+			if (u.isIdInList(b.getRelative(1, 0, 0).getTypeId(), plg.allowcactus)||
+					u.isIdInList(b.getRelative(-1, 0, 0).getTypeId(), plg.allowcactus)||
+					u.isIdInList(b.getRelative(0, 0, 1).getTypeId(), plg.allowcactus)||
+					u.isIdInList(b.getRelative(0, 0, -1).getTypeId(), plg.allowcactus)) {
 				event.getBlock().setType(Material.AIR);
 				event.setCancelled(true);
 			}
@@ -133,7 +137,7 @@ public class MFBlockListener implements Listener {
 
 
 
-	@EventHandler(priority=EventPriority.NORMAL)
+	@EventHandler(priority=EventPriority.HIGH, ignoreCancelled = true)
 	public void onBlockBreak (BlockBreakEvent event){
 		if (event.isCancelled()) return;
 
@@ -194,9 +198,12 @@ public class MFBlockListener implements Listener {
 			event.getToBlock().breakNaturally();
 		}
 
-		if (plg.fixwatersoil) {
-			Block b = event.getToBlock().getRelative(BlockFace.DOWN);
-			if (b.getType() == Material.SOIL) b.setType(Material.DIRT);
+		if (plg.waterfarm) {
+			Block b = event.getToBlock(); //event.getToBlock().getRelative(BlockFace.DOWN);
+			if ((b.getRelative(BlockFace.DOWN).getType() == Material.SOIL)&&(u.rollDiceChance(plg.watersoil))) b.setType(Material.DIRT);
+			if ((b.getType() == Material.COCOA)&&u.rollDiceChance(plg.watercocoa)) b.setType(Material.AIR);
+				
+			
 		}
 	}
 
@@ -219,10 +226,14 @@ public class MFBlockListener implements Listener {
 				EntityBlockFormEvent evt = (EntityBlockFormEvent) event;
 				if (evt.getEntity() instanceof Snowman){
 					if (plg.smcrust) plg.snowtrails.put(event.getNewState().getBlock().getLocation(), plg.smcrtime/10);
-					else event.setCancelled(true);  // в 1.2.х глючит: снег остается, но после перезахода исчезает.  
+					else {
+						event.getBlock().setType(Material.AIR); // поможет?!
+						event.setCancelled(true);  // в 1.2.х глючит: снег остается, но после перезахода исчезает.  
+					}
 				}
 			} else if ((plg.fixsnow)&&
-					((!plg.unsnowedblocks.isEmpty())&&(plg.isIdInList(event.getNewState().getBlock().getRelative(0, -1, 0).getTypeId(), plg.unsnowedblocks))||
+					((!plg.unsnowedblocks.isEmpty())&&
+							(u.isItemInList(event.getNewState().getBlock().getRelative(0, -1, 0).getTypeId(),event.getNewState().getBlock().getRelative(0, -1, 0).getData(), plg.unsnowedblocks))||
 							(plg.unsnowbiome.contains(event.getNewState().getBlock().getBiome()))))
 				event.setCancelled(true);
 		}
@@ -256,6 +267,22 @@ public class MFBlockListener implements Listener {
 		}
 	}
 
-
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onEntityExplode (EntityExplodeEvent event){
+		// неуязвимые блоки
+		if (plg.unexplode)
+			for (int i = event.blockList().size()-1; i>=0;i--){
+				
+				if (event.blockList().get(i).getTypeId()==17) u.BC("! 17 ! "+u.isItemInList(event.blockList().get(i).getTypeId(), event.blockList().get(i).getData(), plg.unexblock) + " " +plg.unexblock);
+				
+				if (u.isItemInList(event.blockList().get(i).getTypeId(), event.blockList().get(i).getData(), plg.unexblock)) 
+					event.blockList().remove(i);
+				
+			}
+				
+	}
+	
+	
+	
 
 }

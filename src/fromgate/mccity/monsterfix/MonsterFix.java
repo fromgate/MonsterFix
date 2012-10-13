@@ -151,6 +151,13 @@ package fromgate.mccity.monsterfix;
  *  + отключение торговцев-деревенщин
  *  + доп.отправка карт
  *  
+ *  0.3.1
+ *  + Поддержка дата блоков везде где это возможно
+ *  + Поддержка списка исключений для взрывов
+ *  + Ловля рыбы только в разрешенных биомах (река, океан)
+ *  + Фикс фарма какао-бобов при помощи воды. 
+ *  + Изменен подход к фиксу фарма пшеницы (водой) - задается шанс
+ *  +
  *  
  * TODO
  * 
@@ -168,9 +175,12 @@ package fromgate.mccity.monsterfix;
  * - добавить автозакрывалку инвентаря через какое-то время
  * - регулировать время детонации криперов http://forums.bukkit.org/threads/adjustable-creeper-timer.68000/
  * - доразбираться с кактусами
- * 
- *   
- * 
+ * - с бобами бороться буду. Пока ещё не придумал как, но буду. Ловля рыбы в определенных биомах - это отличная идея. Тем более, что река - это отдельный биом. Сделаю.
+ * - баг: если сбивать пшеницу с грядок в чужом привате, она должна не сбивается из-за привата, но сбивается т.к. плагин меняет грядку на землю...
+		приват - worldguard
+ * - доступ к одной печке, сундуку и т.п. только одному игроку в один момент времени		 
+ * - автозакрытие инвентаря через какой-то период времени (??)
+ * - счетчик кликов в секунду в инвентаре (если это возможно) 
  * 
  */
 
@@ -193,13 +203,11 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -219,7 +227,9 @@ public class MonsterFix extends JavaPlugin{
 	boolean fixsneak = true;
 	boolean sneakhrt = true;
 	boolean  fixsprint = true;
-	boolean fixwatersoil = true;
+	boolean waterfarm = true;
+	int watersoil = 100;
+	int watercocoa = 100;
 	int soilchance = 25;
 	boolean fixwheatfarm = true;
 	boolean fixcactusfarm = true;
@@ -338,6 +348,9 @@ public class MonsterFix extends JavaPlugin{
 
 	boolean mapsend = true;
 
+	boolean unexplode = true;
+	String unexblock = "";
+
 
 
 
@@ -380,6 +393,8 @@ public class MonsterFix extends JavaPlugin{
 	HashMap<Player, Long> openinv = new HashMap<Player, Long>(); // замороженные игроки
 	HashMap<Location,Integer> snowtrails = new HashMap<Location,Integer>(); //нарытый снег
 	List<Block> lamps = new ArrayList<Block>();
+
+	HashMap<String, String> permissions = new HashMap<String, String>();
 
 	Long lastdtntime = 0L; 
 
@@ -435,7 +450,10 @@ public class MonsterFix extends JavaPlugin{
 		addBool("whtfarm","antifarm",true,"wheat-farm","Fix wheat farming (turn soil to dirt)");
 		addInt("mlnchance","antifarm",25,"smet-wheat-survival-chance","Wheat, melon and pumpkin smets survival chance");
 
-		addBool("watersoil","antifarm",true,"water-soil-to-dirt","Fix wheat farming with water (turn soil to dirt)");
+		
+		addBool("waterfarm","antifarm",true,"water-farming-fix.enabe","Fix farming with water");
+		addInt("watersoil","antifarm",100,"water-farming-fix.soil-chance","Water-farming chance to turn soil to dirt");
+		addInt("watercocoa","antifarm",100,"water-farming-fix.cocoa-chance","Water-farming chance to turn cocoa to air");
 
 		addBool("cactus","antifarm",true,"cactus-auto-farm-fix","Fix cactus auto-farming");
 		addBool("mobfall","antifarm",true,"mob-first-fall-dmg","Fix mob farming (cancel damage from fist fall)");
@@ -455,12 +473,18 @@ public class MonsterFix extends JavaPlugin{
 		addBool("plrdrop","antifarm",true,"drop-only-player-killer","Drop items and XP only if mob killed by player");
 		addStr("mobnodrop","antifarm",mobnodrop,"mob-with-no-drop","Mob list without any drop");
 		addBool("obsigen","antifarm",true,"obsidian-generators","Fix unlimited obsidian generators");
-
+		
+		addBool("fishfarm","antifarm",true,"biome-fishing.enable","Fishing only at defined biomes");
+		addStr("fishbiomes","antifarm","river,ocean,beach","biome-fishing.biomes","Fishing only at defined biomes");
+		addInt("fishchance","antifarm",20,"biome-fishing.chance","Chance to catch fish in forbidden biomes");
+		addBool("fishwarn","antifarm",true,"biome-fishing.show-warning","Show warning message when player trying to catch fish at forbidden biome");
+		
+		
 		addBool("saveall","system",true,"save-all.enable","Periodically run save-all command");
 
 		addStr("language","system","english","monsterfix.language","MonsterFix translation language");
-		
-		
+
+
 		addInt("saveint","system",30,"save-all.time-interval","Saving-all interval (minutes)");
 		addBool("savemsg","system",true,"save-all.show-message","Show saving-all message");
 		addBool("saveinvclose","system",true,"save-all.close-inventories","Force players to close inventory (prevent item duping)");
@@ -534,8 +558,8 @@ public class MonsterFix extends JavaPlugin{
 
 		addBool("lhplace","world",true,"limit-height.enable","Height restriction for placing defined blocks");
 		addBool("lhbmsg","world",true,"limit-height.show-message","Show height-limit warning message");
-		addInt("lheight","world",90,"limit-height.lava","Height value to deny placing forbidden blocks");
-		addStr("lhblock","world","10,11","limit-height.lava","Forbidden blocks list");
+		addInt("lheight","world",90,"limit-height.height","Height value to deny placing forbidden blocks");
+		addStr("lhblock","world","10,11","limit-height.blocks","Forbidden blocks list");
 
 		addBool("tpveject","world",true,"eject-player-from-vehicle-on-teleporting","Eject player from any vehicle when he trying to teleport");
 
@@ -633,7 +657,10 @@ public class MonsterFix extends JavaPlugin{
 		addInt("dmprtime","explosion",80,"explosion.tnt.maxi-prime-time","Maximum TNT-prime time (ticks)"); //по умолчанию 80
 		addInt("dtnmax","explosion",3,"explosion.detonate.max-per-once","Maximum number of simultaneous TNT-detonation");
 		addInt("dtndelay","explosion",1500,"explosion.detonate.delay","Delay between the detonations (milliseconds)");
-
+		
+		addBool("unexplode","explosion",true,"explosion.unexploding-blocks.enable","Allow to prevent exploding of defined blocks");
+		addStr("unexblock","explosion","0","explosion.unexploding-blocks.blocks","Unexploding block list");
+		//addStr("unexblock","explosion","55,54,64","explosion.unexploding-blocks.blocks","Unexploding block list");
 
 		addBool("flymode","gameplay",true,"allow-flight","Built-in fly mode");
 
@@ -651,7 +678,10 @@ public class MonsterFix extends JavaPlugin{
 		fixsneak = cfgB("sneak");
 		fixsprint = cfgB("sprint");
 		headshots = cfgB("headshots");
-		fixwatersoil = cfgB("watersoil");
+		waterfarm = cfgB("waterfarm");
+		watersoil = cfgI("watersoil");
+		watercocoa = cfgI("watercocoa");
+		
 		soilchance = cfgI("mlnchance");
 		fixwheatfarm = cfgB("whtfarm");
 		fixcactusfarm = cfgB("cactus");
@@ -782,6 +812,9 @@ public class MonsterFix extends JavaPlugin{
 		cpwrong = cfgS("cpwrong");
 		cpright = cfgS("cpright");
 		mapsend = cfgB("mapsend");
+		unexplode = cfgB("unexplode");
+		unexblock = cfgS("unexblock");
+		
 		InitBiomeList();
 	}
 
@@ -854,8 +887,8 @@ public class MonsterFix extends JavaPlugin{
 	public void onEnable() {
 		config = getConfig();
 		language = config.getString("system.monsterfix.language", "english");
-		
-		
+
+
 		u = new MFUtil(this, config.getBoolean("monsterfix.version-check",true),
 				false,language,"monsterfix","MonsterFix","mfix","&3[mfix]&a "); //проверка версий и metrics
 
@@ -891,9 +924,9 @@ public class MonsterFix extends JavaPlugin{
 		} catch (IOException e) {
 			log.info("[MonsterFix] failed to submit stats to the Metrics (mcstats.org)");
 		}
-
-
-		this.saveHlpFile();
+		fillPermissions();
+		
+		//this.saveHlpFile();
 	}
 
 	protected void FillGroups(){
@@ -983,7 +1016,7 @@ public class MonsterFix extends JavaPlugin{
 			}
 		}
 		if (cfgB("savemsg")) u.BC(u.MSG("msg_savingall",'f')); 
-			
+
 		this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "save-all");
 
 	}
@@ -1149,44 +1182,9 @@ public class MonsterFix extends JavaPlugin{
 
 	// Функция предназначена для снижения параноидальных проявлений у игроков
 	protected void WarnPlayer(Player p, boolean showempty){
-		if (p.isOp()) {
-			u.PrintPxMSG(p, "msg_warnallperm");//		p.sendMessage(px+"You are OP, all permissions active :)");
-			return;
-		}
 		ArrayList<String> str = new ArrayList<String>();
-		if (p.hasPermission("monsterfix.farmer")) str.add("farmer");
-		if (p.hasPermission("monsterfix.hugemushroom")) str.add("hugemushroom");
-		if (p.hasPermission("monsterfix.kill")) str.add("kill");
-		if (p.hasPermission("monsterfix.badluck")) str.add("badluck");
-		if (p.hasPermission("monsterfix.sharpshooter")) str.add("sharphooter");
-
-		if (p.hasPermission("monsterfix.cheats")) str.add("cheats");
-		if (p.hasPermission("monsterfix.cheats.zmbzcheat")) str.add("Zombe Z-cheat");
-		if (p.hasPermission("monsterfix.cheats.zmbnoclip")) str.add("Zombe NoClip");
-		if (p.hasPermission("monsterfix.cheats.cjbxray")) str.add("CJB X-Ray");
-		if (p.hasPermission("monsterfix.cheats.reicave")) str.add("Rei's cave");
-
-		if (p.hasPermission("monsterfix.fly")) str.add("fly");
-		if (p.hasPermission("monsterfix.fly.zmbfly")) str.add("Zombe fly");
-		if (p.hasPermission("monsterfix.fly.cjbfly")) str.add("CJB Fly");
-		if (p.hasPermission("monsterfix.fly.flymode")) str.add("MF flymode");
-
-		if (p.hasPermission("monsterfix.radar")) str.add("map-radar");
-		if (p.hasPermission("monsterfix.radar.reiradar")) str.add("Rei's radar");
-		if (p.hasPermission("monsterfix.radar.cjbradar")) str.add("CJB radar");
-		if (p.hasPermission("monsterfix.radar.mcautomap")) str.add("MC Automap");
-
-		if (p.hasPermission("monsterfix.cheats.unfreeze")) str.add("MF unfreeze");
-
-		if (p.hasPermission("monsterfix.chat.color-basic")) str.add("chat color - basic");
-		if (p.hasPermission("monsterfix.chat.font")) str.add("chat font");
-		if (p.hasPermission("monsterfix.chat.color-red")) str.add("chat color - red");
-		if (p.hasPermission("monsterfix.chat.hidden")) str.add("chat color - hidden");
-		if (p.hasPermission("monsterfix.enderpearltp")) str.add("enderpearltp");
-
-		if (p.hasPermission("monstefix.highlander")) str.add("highlander");
-		if (p.hasPermission("monsterfix.highlander.space-suit")) str.add("space suit");
-
+		for (String pkey : permissions.keySet())
+			if (p.hasPermission(pkey)) str.add(permissions.get(pkey));
 
 		if (str.size()>0) {
 			String strout = "";	
@@ -1194,8 +1192,33 @@ public class MonsterFix extends JavaPlugin{
 				if (i==0) strout = str.get(i);
 				else strout = strout+", " + str.get(i);
 			}
-			u.PrintPxMSG(p, "msg_warnplayerperm", strout);// .sendMessage(px+"Your active MonsteFix permissions: "+ChatColor.GREEN+strout);
+
+			if (str.size() == permissions.size()) u.PrintPxMSG(p, "msg_warnallperm");
+			else u.PrintPxMSG(p, "msg_warnplayerperm", strout);
+
 		} else if (showempty) u.PrintPxMSG(p, "msg_warnpalyerempty"); //p.sendMessage(px+"You have no any active MonsteFix permissions."); 
+	}
+
+	private void fillPermissions(){
+		permissions.clear();
+		permissions.put("monsterfix.farmer","farmer");
+		permissions.put("monsterfix.hugemushroom","hugemushroom");
+		permissions.put("monsterfix.kill","kill");
+		permissions.put("monsterfix.badluck","badluck");
+		permissions.put("monsterfix.sharpshooter","sharphooter");
+		permissions.put("monsterfix.cheats","cheats");
+		permissions.put("monsterfix.chat.color-basic","chat color - basic");
+		permissions.put("monsterfix.chat.font","chat font");
+		permissions.put("monsterfix.chat.color-red","chat color - red");
+		permissions.put("monsterfix.chat.hidden","chat color - hidden");
+		permissions.put("monsterfix.enderpearltp","enderpearltp");
+		permissions.put("monstefix.highlander","highlander");
+		permissions.put("monsterfix.highlander.space-suit","space suit");
+		
+		
+		permissions.put("monsterfix.unlhblock", "high-block");
+		permissions.put("monsterfix.lamp.place", "lamp place");
+		permissions.put("monsterfix.lamp.break", "lamp break");
 	}
 
 	protected int indexTrashBlock (Block b){
@@ -1208,7 +1231,7 @@ public class MonsterFix extends JavaPlugin{
 
 
 
-	protected boolean isIdInList (int id, String str){
+	/*protected boolean isIdInList (int id, String str){
 		String [] ln = str.split(",");
 		if (ln.length>0) {
 			for (int i = 0; i<ln.length; i++)
@@ -1225,7 +1248,7 @@ public class MonsterFix extends JavaPlugin{
 				if (ln[i].equalsIgnoreCase(str)) return true;
 		}		
 		return false;
-	}
+	}*/
 
 	//	protected boolean isTrashBlock(int id){
 	//		return isIdInList (id, this.rmvblocks);
@@ -1282,7 +1305,7 @@ public class MonsterFix extends JavaPlugin{
 			for (int dy = -1; dy<=1; dy++)
 				for (int dz = -1; dz<=1; dz++) {
 					if ((dx!=0)||(dy!=0)||(dz!=0))
-						if (!isIdInList (b.getRelative(dx, dy, dz).getTypeId(), rmvnatural)) return false;
+						if (!u.isItemInList (b.getRelative(dx, dy, dz).getTypeId(),b.getRelative(dx, dy, dz).getData(), rmvnatural)) return false;
 				}
 		return true;
 	}
@@ -1415,15 +1438,6 @@ public class MonsterFix extends JavaPlugin{
 
 
 
-	protected boolean CheckPermBC (Player p, BlockCode b){
-		boolean r = ((p.hasPermission("monstefix."+b.perm_global)||p.hasPermission("monstefix."+b.perm_global+"."+b.perm_local))||
-				(p.hasPermission("sbc."+b.perm_global)||p.hasPermission("sbc."+b.perm_global+"."+b.perm_local))); 
-		if (b.invert) r = !r;
-		return r;
-	}
-
-
-
 
 	public void MelPumBreak (Block b) {
 		if ((b.getType() == Material.MELON_STEM)||(b.getType() == Material.PUMPKIN_STEM)) {
@@ -1491,7 +1505,7 @@ public class MonsterFix extends JavaPlugin{
 		return prjn.toLowerCase();
 	}
 
-	public boolean PlaceBlock(Location loc, Player p, Material newType, byte newData, boolean phys){
+	/*	public boolean PlaceBlock(Location loc, Player p, Material newType, byte newData, boolean phys){
 		return PlaceBlock (loc.getBlock(),p,newType,newData, phys);
 	}
 
@@ -1502,7 +1516,7 @@ public class MonsterFix extends JavaPlugin{
 		this.getServer().getPluginManager().callEvent(event);
 		if (event.isCancelled()) state.update(true);
 		return event.isCancelled();
-	}
+	} */
 
 
 	protected String recodeText (String str){
@@ -1554,40 +1568,40 @@ public class MonsterFix extends JavaPlugin{
 		u.PrintPxMsg(p, getDescription (key));
 	}
 
-	
 
-	
+
+
 	public void saveHlpFile(){
 		try {
 			YamlConfiguration hlp = new YamlConfiguration();
 			File f = new File (getDataFolder()+File.separator+"readme.txt");
-			
+
 
 			for (MFBool c : cfgb) {
 				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<on|off> (default: "+c.v+")");
-						
+
 			}
 
 			for (MFInt c : cfgi) {
 				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<integer value> (default: "+c.v+")");
 			}
-			
+
 			for (MFFloat c : cfgf) {
 				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<float value> (default: "+c.v+")");
 			}
-			
+
 			for (MFStr c : cfgs) {
 				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<string> (default: "+c.v+")");
 			}
-			
+
 			hlp.save(f);
 		} catch (Exception e){
 			e.printStackTrace();
 		}
-		
-		
-		
-		
+
+
+
+
 	}
-	
+
 }

@@ -77,6 +77,8 @@ public class MFUtil extends FGUtilCore {
 		addMSG("msg_snowheadshot","Ooops! %1% throws a snowball in your head!");
 		addMSG("msg_eggheadshot","Ooops! %1% throws an egg in your head!");
 		addMSG("msg_hookheadshot","Ooops! %1% caught you on the hook!");
+		addMSG("msg_fishfarm","Hmm... Maybe there's no fish here...");
+		
 		addMSG("someone","Someone");
 		addMSG("msg_headshot!","Headshot!");
 		addMSG("msg_shortbreath","You're short of breath!");
