@@ -158,6 +158,10 @@ package fromgate.mccity.monsterfix;
  *  + Фикс фарма какао-бобов при помощи воды. 
  *  + Изменен подход к фиксу фарма пшеницы (водой) - задается шанс
  *  +
+ *  0.3.2
+ *  + одноразовая кровать
+ *  + неуязвимые (для взрыва) блоки
+ *  + незарывающиеся чешуйницы
  *  
  * TODO
  * 
@@ -180,7 +184,8 @@ package fromgate.mccity.monsterfix;
 		приват - worldguard
  * - доступ к одной печке, сундуку и т.п. только одному игроку в один момент времени		 
  * - автозакрытие инвентаря через какой-то период времени (??)
- * - счетчик кликов в секунду в инвентаре (если это возможно) 
+ * - счетчик кликов в секунду в инвентаре (если это возможно)
+ *  * - Эх, было бы еще круто, чтобы можно было ограничение по высоте сделать различным для разных блоков. Например шерсть до 128, лава до 15, тнт до 5 и тд  
  * 
  */
 
@@ -351,15 +356,10 @@ public class MonsterFix extends JavaPlugin{
 	boolean unexplode = true;
 	String unexblock = "";
 
-
-
-
 	/*
 	 * Creeper,Skeleton,Spider,Giant,Zombie,Slime,Ghast,PigZombie,Enderman,CaveSpider,Silverfish,
 	 * Blaze,LavaSlime,EnderDragon,Pig,Sheep,Cow,Chicken,Squid,Wolf,MushroomCow,SnowMan,Villager
 	 */
-
-
 	//разные переменные
 
 
@@ -393,9 +393,7 @@ public class MonsterFix extends JavaPlugin{
 	HashMap<Player, Long> openinv = new HashMap<Player, Long>(); // замороженные игроки
 	HashMap<Location,Integer> snowtrails = new HashMap<Location,Integer>(); //нарытый снег
 	List<Block> lamps = new ArrayList<Block>();
-
 	HashMap<String, String> permissions = new HashMap<String, String>();
-
 	Long lastdtntime = 0L; 
 
 
@@ -408,6 +406,7 @@ public class MonsterFix extends JavaPlugin{
 	HashMap<String, String> perms = new HashMap<String, String>(); 
 
 	public FileConfiguration config;
+	
 	File directory;
 
 
@@ -475,7 +474,7 @@ public class MonsterFix extends JavaPlugin{
 		addBool("obsigen","antifarm",true,"obsidian-generators","Fix unlimited obsidian generators");
 		
 		addBool("fishfarm","antifarm",true,"biome-fishing.enable","Fishing only at defined biomes");
-		addStr("fishbiomes","antifarm","river,ocean,beach","biome-fishing.biomes","Fishing only at defined biomes");
+		addStr("fishbiomes","antifarm","river,ocean,beach","biome-fishing.biomes","Fish-biome list");
 		addInt("fishchance","antifarm",20,"biome-fishing.chance","Chance to catch fish in forbidden biomes");
 		addBool("fishwarn","antifarm",true,"biome-fishing.show-warning","Show warning message when player trying to catch fish at forbidden biome");
 		
@@ -562,12 +561,19 @@ public class MonsterFix extends JavaPlugin{
 		addStr("lhblock","world","10,11","limit-height.blocks","Forbidden blocks list");
 
 		addBool("tpveject","world",true,"eject-player-from-vehicle-on-teleporting","Eject player from any vehicle when he trying to teleport");
+		
+		addBool("silverfish","world",true,"silverfish-undig","Prevent silverfish excavations");
 
 
 		//addBool("vines","world",true,"vines.enable","Control grow of the vines"));  //TODO
+		
+		
 
 		addBool("warnplayer","system",true,"permissions-warning.enable","Warning player about monstefix permissions");
 		addBool("warnplempty","system",true,"permissions-warning.show-empty-warning","Show empty warning about player permissions");
+		
+		addBool("bedonce","gameplay",true,"bed-respawn-once.enable","Respawn at bed only once");
+		addBool("bedoncemsg","gameplay",true,"bed-respawn-once.show-warning","Inform player that he's link to bed was cleared");
 
 		addBool("snowball","gameplay",true,"snowball-place-snow","Place snow with snowball throw");
 		addBool("enderpearl","gameplay",true,"block-enderpearl-tp","Prevent teleporting with enderpearl");		

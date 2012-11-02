@@ -85,6 +85,8 @@ public class MFUtil extends FGUtilCore {
 		addMSG("msg_blockcmd","You cannot execute command %1%");
 		addMSG("msg_placedenied","You cannot place %1% here");
 		addMSG("msg_savingall","Saving all...");
+		addMSG("msg_bedonce","You respawned at bed. Don't forget to sleep here again or next time you will wake up at world's spawn");
+		
 		
 	/*	
 		addMSG("","");

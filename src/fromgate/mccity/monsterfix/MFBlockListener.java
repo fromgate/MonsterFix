@@ -45,6 +45,7 @@ import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityBreakDoorEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.inventory.ItemStack;
@@ -200,7 +201,9 @@ public class MFBlockListener implements Listener {
 
 		if (plg.waterfarm) {
 			Block b = event.getToBlock(); //event.getToBlock().getRelative(BlockFace.DOWN);
-			if ((b.getRelative(BlockFace.DOWN).getType() == Material.SOIL)&&(u.rollDiceChance(plg.watersoil))) b.setType(Material.DIRT);
+			
+			if ((b.getRelative(BlockFace.DOWN).getType() == Material.SOIL)&&(u.rollDiceChance(plg.watersoil))) b.getRelative(BlockFace.DOWN).setType(Material.DIRT);
+			
 			if ((b.getType() == Material.COCOA)&&u.rollDiceChance(plg.watercocoa)) b.setType(Material.AIR);
 				
 			
@@ -271,15 +274,15 @@ public class MFBlockListener implements Listener {
 	public void onEntityExplode (EntityExplodeEvent event){
 		// неуязвимые блоки
 		if (plg.unexplode)
-			for (int i = event.blockList().size()-1; i>=0;i--){
-				
-				if (event.blockList().get(i).getTypeId()==17) u.BC("! 17 ! "+u.isItemInList(event.blockList().get(i).getTypeId(), event.blockList().get(i).getData(), plg.unexblock) + " " +plg.unexblock);
-				
+			for (int i = event.blockList().size()-1; i>=0;i--)
 				if (u.isItemInList(event.blockList().get(i).getTypeId(), event.blockList().get(i).getData(), plg.unexblock)) 
 					event.blockList().remove(i);
 				
-			}
-				
+	}
+	
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onEntityChangeBlock (EntityChangeBlockEvent event){
+		if ((event.getEntityType() == EntityType.SILVERFISH)&&(plg.cfgB("silverfish"))) event.setCancelled(true);
 	}
 	
 	

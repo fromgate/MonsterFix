@@ -72,6 +72,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
@@ -557,6 +558,14 @@ public class MFPlayerListener implements Listener {
 	}
 
 
+	@EventHandler(priority=EventPriority.HIGHEST)
+	public void onPlayerRespawn (PlayerRespawnEvent event) {
+		if ((event.isBedSpawn())&&(plg.cfgB("bedonce"))){
+			event.getPlayer().setBedSpawnLocation(event.getPlayer().getWorld().getSpawnLocation());
+			if (plg.cfgB("bedoncemsg")) u.PrintMSG(event.getPlayer(), "msg_bedonce",'c');
+		}
+	}
+	
 	@EventHandler(priority=EventPriority.MONITOR)
 	public void onCreatureSpawn (CreatureSpawnEvent event) {
 		if ((!event.isCancelled())&&(plg.msdrop)&&(event.getSpawnReason() == SpawnReason.SPAWNER)&&
