@@ -5,40 +5,38 @@
  *    
  *  This file is part of MonsterFix
  *  
- *  WeatherMan is free software: you can redistribute it and/or modify
+ *  MonsterFix is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  WeatherMan is distributed in the hope that it will be useful,
+ *  MonsterFix is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with WeatherMan.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with MonsterFix.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 
 
-package fromgate.mccity.monsterfix;
+package me.fromgate.monsterfix;
 
-public class MFFloat {
+public class MFStr {
 	String name;
 	String grp="n/a";
-	float v=-0.1f;
+	String v="";
 	String node ="";
 	String txt ="";
-	
 
-	public MFFloat (String name, String grp, float v, String node, String descr) {
+	public MFStr (String name, String grp, String v, String node, String descr) {
 		this.name=name;
 		this.grp = grp;
 		this.v=v;
 		this.node=node;
 		this.txt = descr;
 	}
-
 
 	@Override
 	public int hashCode() {
@@ -49,16 +47,15 @@ public class MFFloat {
 		return result;
 	}
 
-
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (!(obj instanceof MFFloat))
+		if (!(obj instanceof MFStr))
 			return false;
-		MFFloat other = (MFFloat) obj;
+		MFStr other = (MFStr) obj;
 		if (grp == null) {
 			if (other.grp != null)
 				return false;
@@ -71,5 +68,6 @@ public class MFFloat {
 			return false;
 		return true;
 	}
-	
+
+
 }

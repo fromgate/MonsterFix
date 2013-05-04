@@ -5,23 +5,23 @@
  *    
  *  This file is part of MonsterFix
  *  
- *  WeatherMan is free software: you can redistribute it and/or modify
+ *  MonsterFix is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  WeatherMan is distributed in the hope that it will be useful,
+ *  MonsterFix is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with WeatherMan.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with MonsterFix.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 
 
-package fromgate.mccity.monsterfix;
+package me.fromgate.monsterfix;
 
 
 import java.util.Iterator;
@@ -62,7 +62,7 @@ public class MFCommands implements CommandExecutor{
 						plg.UpdateFastVar();
 						plg.Rst();
 						
-						u.PrintPxMSG(p, "msg_cfgreload"); 
+						u.printMSG(p, "msg_cfgreload"); 
 						
 						return true;
 					} else if (args[0].equalsIgnoreCase("cfg")) {
@@ -81,7 +81,7 @@ public class MFCommands implements CommandExecutor{
 							String grp = itr.next();
 							if (args[i].equalsIgnoreCase(grp)) {
 								cmdok=true;
-								p.sendMessage(ChatColor.GOLD+"MonsteFix "+u.des.getVersion()+" | "+u.MSG("configuration",'6')); 
+								p.sendMessage(ChatColor.GOLD+"MonsteFix "+u.des.getVersion()+" | "+u.getMSG("configuration",'6')); 
 								plg.PrintGrp(p, args[i]);
 							}  else if (args[i].startsWith(grp+"=")){
 								String [] ln;
@@ -90,7 +90,7 @@ public class MFCommands implements CommandExecutor{
 									plg.cfggroup.put(grp, ln[1].equalsIgnoreCase("on")||ln[1].equalsIgnoreCase("true")||ln[1].equalsIgnoreCase("enable"));
 								} else plg.cfggroup.put(grp, false);
 								cfgchanged = true;
-								u.PrintPxMsg(p, u.MSG("msg_groupendis",grp,'a','6')+" "+u.EnDis(plg.cfggroup.get(grp)));
+								u.printPxMsg(p, u.getMSG("msg_groupendis",'a','6',grp)+" "+u.EnDis(plg.cfggroup.get(grp)));
 							}
 						}
 
@@ -120,14 +120,14 @@ public class MFCommands implements CommandExecutor{
 								String [] ln;
 								ln = args[i].split("=");
 								if (ln.length == 2) {
-									if (ln[1].matches("[1-9]+[0-9]*")) {
+									if (ln[1].matches("[0-9]+[0-9]*")) {
 										c.v = Integer.parseInt(ln[1]);
 										st = true;
 										cfgchanged = true;
 									}
 								}
 								plg.printParam(p, c.name);
-								if (!st) u.PrintPxMSG(p, "msg_paramnotchanged"); 
+								if (!st) u.printMSG(p, "msg_paramnotchanged"); 
 							}
 						}
 
@@ -145,7 +145,7 @@ public class MFCommands implements CommandExecutor{
 									cfgchanged = true;
 								}
 								plg.printParam(p, c.name);
-								if (!st) u.PrintPxMSG(p, "msg_paramnotchanged"); 
+								if (!st) u.printMSG(p, "msg_paramnotchanged"); 
 							}
 						}
 
@@ -158,7 +158,6 @@ public class MFCommands implements CommandExecutor{
 								String [] ln;
 								ln = args[i].split("=");
 								if (ln.length == 2) {
-
 									if (ln[1].matches("[0-9]+\\.[0-9]+")||ln[1].matches("[1-9]+[0-9]*")) {
 										c.v = Float.parseFloat(ln[1]);
 										st = true;
@@ -166,14 +165,15 @@ public class MFCommands implements CommandExecutor{
 									}
 								}
 								plg.printParam(p, c.name);
-								if (!st) u.PrintPxMSG(p, "msg_paramnotchanged"); 
+								if (!st) u.printMSG(p, "msg_paramnotchanged"); 
 							}
 						}
 					}
 					if (cfgchanged) {
+						u.BC("Save!!!");
+						plg.SaveCfg();
 						plg.UpdateFastVar();
 						plg.Rst();
-						plg.SaveCfg();
 						return true;
 					}
 				}
@@ -181,12 +181,12 @@ public class MFCommands implements CommandExecutor{
 				if (args.length==1){
 					if (args[0].equalsIgnoreCase("help")){
 						if (p.hasPermission("monsterfix.fly.flymode")&&plg.cfgB("flymode"))
-							u.PrintMSG(p, "msg_canfly","(/mfix fly)");
+							u.printMSG(p, "msg_canfly","(/mfix fly)");
 						plg.DemoColor(p);
 						cmdok = true;					
 					} else if (args[0].equalsIgnoreCase("fly")){
 						if (p.hasPermission("monsterfix.fly.flymode")&&plg.cfgB("flymode")) plg.ToggleFly(p);
-						else u.PrintMSG(p, "msg_cannotfly",'c');
+						else u.printMSG(p, "msg_cannotfly",'c');
 					}
 				}
 

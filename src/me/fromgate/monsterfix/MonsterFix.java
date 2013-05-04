@@ -5,23 +5,23 @@
  *    
  *  This file is part of MonsterFix
  *  
- *  WeatherMan is free software: you can redistribute it and/or modify
+ *  MonsterFix is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  WeatherMan is distributed in the hope that it will be useful,
+ *  MonsterFix is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with WeatherMan.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with MonsterFix.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 
 
-package fromgate.mccity.monsterfix;
+package me.fromgate.monsterfix;
 
 /*  
  * Permissions:
@@ -163,6 +163,26 @@ package fromgate.mccity.monsterfix;
  *  + неуязвимые (для взрыва) блоки
  *  + незарывающиеся чешуйницы
  *  
+ *  0.3.3
+ *  + отображение ид карты
+ *  + сохранение всех характеристик шлема при дропе
+ *  + конфигурация взрывов визера
+ *  
+ *  0.3.4
+ *  + добавляется MetaData для фармящихся мобов
+ *  + добавлена опция установки DamageCause = null
+ *  + исправлен фикс кактусовых автоферм
+ *  + дополнительный фикс роста какао бобов
+ *  + исправлена установка лавы из ведра
+ *  
+ *  0.3.5
+ *  + Блокировка "подкоманд"
+ *  + falldmg - отключение повреждения при падении
+ *  + исправлен mobfall
+ *  + оптимизация - убрал несколько регулярных задач
+ *  + cncslow, cncslowtime - дополнтительная тормозилка глитчеров
+ *  
+ *  
  * TODO
  * 
  * - mobrider
@@ -210,15 +230,13 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-
 public class MonsterFix extends JavaPlugin{
-
+	
 
 	String language = "english";
 	// Кэш переменных
@@ -237,6 +255,8 @@ public class MonsterFix extends JavaPlugin{
 	int watercocoa = 100;
 	int soilchance = 25;
 	boolean fixwheatfarm = true;
+	boolean fixpotfarm = true;
+	boolean fixcrtfarm = true;
 	boolean fixcactusfarm = true;
 	boolean fixmobfall = true;
 	boolean fixmushroom = true;
@@ -254,6 +274,12 @@ public class MonsterFix extends JavaPlugin{
 	int rmvtime = 60;
 	boolean cncfreeze = true; 
 	int cncfrtime= 100;
+	boolean cncslow = true;
+	int cncslowtime = 2;
+	/* 1 sec = 1000 ms
+	 * 1 sec = 20 ticks
+	 * 1 tick = 50 ms
+	 */
 	String cnclswitch = "54,61,62,64,69,77,96,84,107,23";
 	boolean decolor = true;
 	boolean chatcolor = true;
@@ -282,10 +308,25 @@ public class MonsterFix extends JavaPlugin{
 	float crpmr=4;
 	float crpmpwr=2;
 	boolean crpfire=false;
+	
+	
 	boolean fbl=true;
 	float fblr=3;
 	float fblmr=3;
 	boolean fblfire=true;
+	
+	boolean wb=true;
+	float wbr=3;
+	float wbmr=3;
+	boolean wbfire=true;
+	
+	boolean ws=true;
+	float wsr=3;
+	float wsmr=3;
+	boolean wsfire=true;
+
+	
+	
 	boolean detonate = true;
 	int dtnmax = 3;
 	int dexplchance = 30;
@@ -352,10 +393,14 @@ public class MonsterFix extends JavaPlugin{
 	String cpright = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёЁ";
 
 	boolean mapsend = true;
+	boolean mapshowid = true;
 
 	boolean unexplode = true;
 	String unexblock = "";
-
+	
+	//boolean vinefix = true;
+	//int vineheight = 5;
+	
 	/*
 	 * Creeper,Skeleton,Spider,Giant,Zombie,Slime,Ghast,PigZombie,Enderman,CaveSpider,Silverfish,
 	 * Blaze,LavaSlime,EnderDragon,Pig,Sheep,Cow,Chicken,Squid,Wolf,MushroomCow,SnowMan,Villager
@@ -386,8 +431,7 @@ public class MonsterFix extends JavaPlugin{
 
 
 
-	List<Entity> mspmobs = new ArrayList<Entity> (); // мобы из мобспавнера
-	List<Entity> mobdmg = new ArrayList<Entity> ();  // стукнутые мобы
+	
 	List<MFTrashBlock> trashcan = new ArrayList<MFTrashBlock>(); // мусорная корзина
 	List<MFButchery> butch = new ArrayList<MFButchery>(); // скотобойни
 	HashMap<Player, Long> openinv = new HashMap<Player, Long>(); // замороженные игроки
@@ -403,7 +447,9 @@ public class MonsterFix extends JavaPlugin{
 	List<MFStr> cfgs = new ArrayList<MFStr>();
 	List<MFFloat> cfgf = new ArrayList<MFFloat>();
 	HashMap<String, Boolean> cfggroup = new HashMap<String, Boolean>();
-	HashMap<String, String> perms = new HashMap<String, String>(); 
+	HashMap<String, String> perms = new HashMap<String, String>();
+	
+	
 
 	public FileConfiguration config;
 	
@@ -447,12 +493,19 @@ public class MonsterFix extends JavaPlugin{
 		addStr("msexcept","antifarm",msexcept,"mobspawned-drop.exception-mob-list","Mobspawned-mob list that WILL produce drop");
 		addBool("melon","antifarm",true,"melon-pumpkin-grow","Fix unlimited mellon and pumpkin grow");
 		addBool("whtfarm","antifarm",true,"wheat-farm","Fix wheat farming (turn soil to dirt)");
+		addBool("potfarm","antifarm",true,"potato-farm","Fix potato farming (turn soil to dirt)");
+		addBool("crtfarm","antifarm",true,"potato-farm","Fix carrot farming (turn soil to dirt)");
+		
 		addInt("mlnchance","antifarm",25,"smet-wheat-survival-chance","Wheat, melon and pumpkin smets survival chance");
 
 		
 		addBool("waterfarm","antifarm",true,"water-farming-fix.enabe","Fix farming with water");
 		addInt("watersoil","antifarm",100,"water-farming-fix.soil-chance","Water-farming chance to turn soil to dirt");
 		addInt("watercocoa","antifarm",100,"water-farming-fix.cocoa-chance","Water-farming chance to turn cocoa to air");
+		
+		addBool("cocoagrow","antifarm",true,"cocoa-grow-fix.enabe","Fix unlimited cocoa growing");
+		addInt("cocoanum","antifarm",3,"cocoa-grow-fix.maximum-amount","Maximum amount of cocoa beans to grow aroung cocoa-zone");
+		addInt("cocoazone","antifarm",3,"cocoa-grow-fix.zone-radius","Radius of zone around cocoa (to check cocoa number)");
 
 		addBool("cactus","antifarm",true,"cactus-auto-farm-fix","Fix cactus auto-farming");
 		addBool("mobfall","antifarm",true,"mob-first-fall-dmg","Fix mob farming (cancel damage from fist fall)");
@@ -469,6 +522,10 @@ public class MonsterFix extends JavaPlugin{
 		addBool("btchprogres","antifarm",true,"butcheries.progressive-drop-decrease","Progressive (counted by percent of limit)");
 		addInt("btchpenalty","antifarm",2,"butcheries.limit-exceed-penalty","Butchery mob limit exceed penalty");
 		addStr("btchexcept","antifarm",btchexcept,"butcheries.exception-mob-list","Mob exception list for butcheries");
+		addBool("btcusemeta","antifarm",false,"butcheries.metadata.enable","Add additional meta-data to mob entities");
+		addStr("btcmetadata","antifarm","summoned-entity","butcheries.metadata.value","Additional meta-data to add to mob entities");
+		addBool("btcdmgcause","antifarm",true,"butcheries.clear-damage-cause","Clear entity's last damage cause info (for other plugins)");
+		
 		addBool("plrdrop","antifarm",true,"drop-only-player-killer","Drop items and XP only if mob killed by player");
 		addStr("mobnodrop","antifarm",mobnodrop,"mob-with-no-drop","Mob list without any drop");
 		addBool("obsigen","antifarm",true,"obsidian-generators","Fix unlimited obsidian generators");
@@ -497,6 +554,8 @@ public class MonsterFix extends JavaPlugin{
 		addStr("cpright","system","АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёЁ","codepage-fix.right-symbols","Right code page symbols");
 
 		addBool("mapsend","system",true,"force-sending-maps","Forcing to send map data to client");
+		addBool("mapshowid","system",true,"show-map-id","Type map number at left top corner of the map");
+		
 
 		// TODO что-то нифига не работает. 		
 		//addBool("blocklink","system",true,"block-links-in-chat","Disable links in chat"));
@@ -522,7 +581,10 @@ public class MonsterFix extends JavaPlugin{
 		addBool("jpcenter","anticheat",true,"on-join-player-coordinates-fix","Сenter player relative to block on which it stands");
 		//антипролезалка сквозьстены
 		addBool("cncfreeze","anticheat",true,"freeze-after-deny.enable","Freeze player after cancelled action");
-		addInt("cncfrtime","anticheat",100,"freeze-after-deny.freeze-time","Player freezing time (ms) after cancelled action");
+		addInt("cncfrtime","anticheat",100,"freeze-after-deny.freeze-time","Player freezing duration (ms) after cancelled action");
+		addBool("cncslow","anticheat",true,"freeze-after-deny.slow-enable","Add slow potion effect to player after cancelled action");
+		addInt("cncslowtime","anticheat",2,"freeze-after-deny.slow-time","Slow effect duration (ticks) after cancelled action");
+		
 		//addBool("sneakdoor","anticheat",true,"block-sneakers-door","Block sneaking players to pass through private doors"));
 
 		// отключение бессмертия при заходе.  Работает, спасибо Галарану :)
@@ -531,6 +593,11 @@ public class MonsterFix extends JavaPlugin{
 
 		addBool("eptpblock","anticheat",true,"prevent-tp-into-block","Preventing teleporting into non-empty block");
 		//addBool("eptpfreeze","anticheat",true,"freeze-after-ender-pearl-tp","Freeze player efter ender pearl teleportation"));
+		
+		
+		addBool("mapclone","world",true,"map-clone.enable","Prevent map cloning");
+		addBool("mapclall","world",true,"map-clone.all","Prevent to clone all maps");
+		addStr("mapclist","world","0","map-clone.list","List of maps denied to clone");
 
 		addBool("unsnow","world",true,"unsnowable.enable","Prevent snowforming on specified block or in defined biomes");
 		addStr("unsnowblock","world","43,20","unsnowable.blocks.block-list","Unsnowable blocks list");
@@ -564,11 +631,7 @@ public class MonsterFix extends JavaPlugin{
 		
 		addBool("silverfish","world",true,"silverfish-undig","Prevent silverfish excavations");
 
-
 		//addBool("vines","world",true,"vines.enable","Control grow of the vines"));  //TODO
-		
-		
-
 		addBool("warnplayer","system",true,"permissions-warning.enable","Warning player about monstefix permissions");
 		addBool("warnplempty","system",true,"permissions-warning.show-empty-warning","Show empty warning about player permissions");
 		
@@ -642,6 +705,9 @@ public class MonsterFix extends JavaPlugin{
 
 		addBool("nohpregen","gameplay",true,"nohpregen.enable","Limit the maximum health regenerating level");
 		addInt("nohpmax","gameplay",18,"nohpregen.max-hp-regen","Maximum regenerating health limit value");
+		
+		addBool("falldmg","gameplay",true,"fall-damage-preventer","Prevent fall damage for players");
+		
 		addBool("tnt","explosion",true,"explosion.tnt.enable","TNT-explosion control");
 		addFloat("tntr","explosion",4f,"explosion.tnt.radius","TNT-explosion radius");
 		addFloat("tntmr","explosion",6f,"explosion.tnt.max-radius","TNT-explosion maximum radius");
@@ -651,10 +717,25 @@ public class MonsterFix extends JavaPlugin{
 		addFloat("crpmr","explosion",4f,"explosion.creeper.max-radius","Creeper explosion maximum radius");
 		addFloat("crpmpwr","explosion",2f,"explosion.creeper.power-creeper-multiplier","Powered creeper explosion radius multiplier");
 		addBool("crpfire","explosion",false,"explosion.creeper.fire","Creeper explosion fire");
+		
 		addBool("fbl","explosion",true,"explosion.fireball.enable","Ghast-fireball explosion control");
 		addFloat("fblr","explosion",1f,"explosion.fireball.radius","Ghast-fireball explosion radius");
 		addFloat("fblmr","explosion",2f,"explosion.fireball.max-radius","Ghast-fireball explosion maximum radius");
 		addBool("fblfire","explosion",true,"explosion.fireball.fire","Ghast-fireball explosion fire");
+		
+		addBool("wb","explosion",true,"explosion.witherboss.enable","Wither Boss explosion control");
+		addFloat("wbr","explosion",7f,"explosion.witherboss.radius","Wither Boss explosion radius");
+		addFloat("wbmr","explosion",7f,"explosion.witherboss.max-radius","Wither Boss explosion maximum radius");
+		addBool("wbfire","explosion",false,"explosion.witherboss.fire","Wither Boss explosion fire");
+		
+		addBool("ws","explosion",true,"explosion.witherskull.enable","Wither Skull explosion control");
+		addFloat("wsr","explosion",1f,"explosion.witherskull.radius","Wither Skull explosion radius");
+		addFloat("wsmr","explosion",2f,"explosion.witherskull.max-radius","Wither Skull explosion maximum radius");
+		addBool("wsfire","explosion",false,"explosion.witherskull.fire","Wither Skull explosion fire");
+
+		
+		
+		
 		addBool("detonate","explosion",true,"explosion.detonate.enable","Detonate TNT in player inventory");
 		addInt("dexplchance","explosion",30,"explosion.detonate.expl-chance","Explossion-damage inventory detonation chance ");
 		addInt("dfirechance","explosion",20,"explosion.detonate.fire-chance","Fire-damate inventory detonation chance");
@@ -690,6 +771,9 @@ public class MonsterFix extends JavaPlugin{
 		
 		soilchance = cfgI("mlnchance");
 		fixwheatfarm = cfgB("whtfarm");
+		fixpotfarm = cfgB("potfarm");
+		fixcrtfarm = cfgB("crtfarm");
+		
 		fixcactusfarm = cfgB("cactus");
 		fixmobfall = cfgB("mobfall");
 		fixmushroom = cfgB("mushroom");
@@ -712,6 +796,8 @@ public class MonsterFix extends JavaPlugin{
 		rmvtime = cfgI ("rmvtime");
 		cncfreeze = cfgB("cncfreeze");
 		cncfrtime = cfgI ("cncfrtime");
+		cncslow = cfgB("cncslow");
+		cncslowtime = cfgI ("cncslowtime");
 		sneakhrt = cfgB("sneakhrt");
 		chatcolor = cfgB("chatcolor");
 		decolor = cfgB("decolor");
@@ -745,6 +831,19 @@ public class MonsterFix extends JavaPlugin{
 		fblr=cfgF("fblr");
 		fblmr=cfgF("fblmr");
 		fblfire=cfgB("fblfire");
+		
+		wb=cfgB("wb");
+		wbr=cfgF("wbr");
+		wbmr=cfgF("wbmr");
+		wbfire=cfgB("wbfire");
+		
+		ws=cfgB("ws");
+		wsr=cfgF("wsr");
+		wsmr=cfgF("wsmr");
+		wsfire=cfgB("wsfire");
+
+		
+		
 
 		detonate = cfgB("detonate");
 		dexplchance = cfgI("dexplchance");
@@ -818,6 +917,7 @@ public class MonsterFix extends JavaPlugin{
 		cpwrong = cfgS("cpwrong");
 		cpright = cfgS("cpright");
 		mapsend = cfgB("mapsend");
+		mapshowid = cfgB("mapshowid");
 		unexplode = cfgB("unexplode");
 		unexblock = cfgS("unexblock");
 		
@@ -845,7 +945,7 @@ public class MonsterFix extends JavaPlugin{
 
 	public void PrintGrp (Player p, String grp){
 		if ((!grp.isEmpty())&& cfggroup.containsKey(grp)){
-			String str  = u.MSG("grp_options",grp,'e','d'); 
+			String str  = u.getMSG("grp_options",'e','d',grp); 
 			String tstr="~";
 			for (int i = 0; i<cfgb.size();i++)
 				if (cfgb.get(i).grp.equalsIgnoreCase(grp))	tstr = tstr+", "+cfgB2Str(cfgb.get(i).name);
@@ -880,7 +980,7 @@ public class MonsterFix extends JavaPlugin{
 			str = str+tstr;
 			String [] ln = str.split("~");
 			p.sendMessage(ln);
-		} else u.PrintMSG(p, "msg_gorupnotfound",grp,'c','4'); //	p.sendMessage(px+ChatColor.RED+"Group "+ChatColor.DARK_RED+grp+ChatColor.RED+" not found.");
+		} else u.printMSG(p, "msg_gorupnotfound",'c','4',grp);
 	}
 
 	@Override
@@ -902,6 +1002,7 @@ public class MonsterFix extends JavaPlugin{
 		pl = new MFPlayerListener(this);
 		fl = new MFFreeze(this);
 
+		MFMeta.init(this);
 
 		directory = getDataFolder();
 		if (!directory.exists()) directory.mkdir();
@@ -923,6 +1024,18 @@ public class MonsterFix extends JavaPlugin{
 		pm.registerEvents(this.pl, this);
 		pm.registerEvents(this.bl, this);
 		pm.registerEvents(this.fl, this);
+		
+		
+		MFObc.init();
+		if (!MFObc.isTestedVersion()) {
+			log.info("[MonsterFix] +-------------------------------------------------------------------+");
+			log.info("[MonsterFix] + This version of MonsterFix was not tested with CraftBukkit "+MFObc.getMinecraftVersion().replace('_', '.')+" +");
+			log.info("[MonsterFix] + Check updates at http://dev.bukkit.org/server-mods/monsterfix/    +");
+			log.info("[MonsterFix] + or use this version at your own risk                              +");
+			log.info("[MonsterFix] +-------------------------------------------------------------------+");
+		}
+
+		
 
 		try {
 			MetricsLite metrics = new MetricsLite(this);
@@ -943,15 +1056,17 @@ public class MonsterFix extends JavaPlugin{
 		for (int i = 0; i<cfgs.size();i++) if (!cfggroup.containsKey(cfgs.get(i).grp)) cfggroup.put(cfgs.get(i).grp, true);
 	}
 
+	/*
 	protected void TickMobClear() {
 		if (mspmobs.size()>0) 
 			for (int i = mspmobs.size()-1;i>=0;i--)
 				if (mspmobs.get(i).isDead()) mspmobs.remove(i);
+		
 		if (mobdmg.size()>0)
 			for (int i = mobdmg.size()-1;i>=0;i--)
-				if (mobdmg.get(i).isDead()) mobdmg.remove(i);
+				if (mobdmg.get(i).isDead()) mobdmg.remove(i); 
 
-	}
+	}*/
 
 	protected void UnButch(){
 		if (butch.size()>0)
@@ -973,6 +1088,7 @@ public class MonsterFix extends JavaPlugin{
 	}
 
 	public void LoadCfg() {
+		reloadConfig();
 		Set<Entry<String, Boolean>> entries = cfggroup.entrySet(); 
 		Iterator<Entry<String, Boolean>> itr = entries.iterator();
 		while (itr.hasNext()){
@@ -995,19 +1111,20 @@ public class MonsterFix extends JavaPlugin{
 			config.set (ent.getKey()+".enable", ent.getValue());
 		}
 		for (MFBool c : cfgb) {
-			config.set(c.grp+"."+c.node+"_description",u.MSGnc(c.txt));
+			config.set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
 			config.set(c.grp+"."+c.node,c.v);
 		}
 		for (MFInt c : cfgi) {
-			config.set(c.grp+"."+c.node+"_description",u.MSGnc(c.txt));
+			config.set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
 			config.set(c.grp+"."+c.node,c.v);
 		}
 		for (MFStr c : cfgs) {
-			config.set(c.grp+"."+c.node+"_description",u.MSGnc(c.txt));
+			if (((c.node.equalsIgnoreCase("codepage-fix.wrong-symbols"))||(c.node.equalsIgnoreCase("codepage-fix.right-symbols")))&&(!cfgB("cpfix"))) continue;
+			config.set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
 			config.set(c.grp+"."+c.node,c.v);
 		}
 		for (MFFloat c : cfgf) {
-			config.set(c.grp+"."+c.node+"_description",u.MSGnc(c.txt));
+			config.set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
 			config.set(c.grp+"."+c.node,c.v);
 		}
 
@@ -1021,7 +1138,7 @@ public class MonsterFix extends JavaPlugin{
 				if (p.isOnline()) p.closeInventory();
 			}
 		}
-		if (cfgB("savemsg")) u.BC(u.MSG("msg_savingall",'f')); 
+		if (cfgB("savemsg")) u.BC(u.getMSG("msg_savingall",'f')); 
 
 		this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "save-all");
 
@@ -1199,10 +1316,10 @@ public class MonsterFix extends JavaPlugin{
 				else strout = strout+", " + str.get(i);
 			}
 
-			if (str.size() == permissions.size()) u.PrintPxMSG(p, "msg_warnallperm");
-			else u.PrintPxMSG(p, "msg_warnplayerperm", strout);
+			if (str.size() == permissions.size()) u.printMSG(p, "msg_warnallperm");
+			else u.printMSG(p, "msg_warnplayerperm", strout);
 
-		} else if (showempty) u.PrintPxMSG(p, "msg_warnpalyerempty"); //p.sendMessage(px+"You have no any active MonsteFix permissions."); 
+		} else if (showempty) u.printMSG(p, "msg_warnpalyerempty"); //p.sendMessage(px+"You have no any active MonsteFix permissions."); 
 	}
 
 	private void fillPermissions(){
@@ -1324,8 +1441,8 @@ public class MonsterFix extends JavaPlugin{
 		if (tid_pdmg_b) Bukkit.getScheduler().cancelTask(tid_pdmg);
 		if (tid_trash_b) Bukkit.getScheduler().cancelTask(tid_trash);
 
-		mobdmg.clear();
-		mspmobs.clear();
+		//mobdmg.clear();
+		//mspmobs.clear();
 		trashcan.clear();
 		fl.fplayers.clear();
 		//canceler.clear();
@@ -1357,7 +1474,7 @@ public class MonsterFix extends JavaPlugin{
 				public void run (){
 					minute_tid++;
 					if (minute_tid>=6){
-						TickMobClear();
+						//TickMobClear();
 						UnButch();						
 						minute_tid =0;
 					}
@@ -1400,10 +1517,10 @@ public class MonsterFix extends JavaPlugin{
 		if (p.hasPermission("monsterfix.chat.hidden")) str = str+"§3&k§k&k§r";
 		if (p.hasPermission("monsterfix.chat.font")) str = str+"§l&l§r§m&m§r§n&n§r";
 
-		if (str.isEmpty()) u.PrintPxMSG (p, "msg_nochatperm",'c'); 
+		if (str.isEmpty()) u.printMSG (p, "msg_nochatperm",'c'); 
 		else {
-			str = str+" §r§8(&r - "+u.MSG("msg_reset")+")";
-			u.PrintMSG(p, "msg_allowinchat");
+			str = str+" §r§8(&r - "+u.getMSG("msg_reset")+")";
+			u.printMSG(p, "msg_allowinchat");
 			p.sendMessage(str);
 			//u.PrintMsg(p, ChatColor.DARK_GREEN+"&r - "+ u.MSG("msg_toreset"));
 		}
@@ -1478,8 +1595,8 @@ public class MonsterFix extends JavaPlugin{
 		if (p.getGameMode() == GameMode.SURVIVAL) {
 			p.setAllowFlight(!p.getAllowFlight());
 			p.setFlying(p.getAllowFlight());
-			u.PrintEnDis (p,"msg_flymode",p.getAllowFlight());//	p.sendMessage(px+"Fly-mode "+u.EnDis(p.getAllowFlight()));
-		} else u.PrintPxMSG(p, "msg_flymodecreative"); //p.sendMessage(px+" You are in creative mode and you can fly :)");
+			u.printEnDis (p,"msg_flymode",p.getAllowFlight());//	p.sendMessage(px+"Fly-mode "+u.EnDis(p.getAllowFlight()));
+		} else u.printMSG(p, "msg_flymodecreative"); //p.sendMessage(px+" You are in creative mode and you can fly :)");
 	}
 
 	public Biome BiomeByName (String bn){
@@ -1560,18 +1677,18 @@ public class MonsterFix extends JavaPlugin{
 
 	public String getDescription(String key){
 		int i = getIndexCfgB(key);
-		if (i>=0) return  "&a"+u.MSG(cfgb.get(i).txt)+"&2 "+u.EnDis(cfgb.get(i).v);
+		if (i>=0) return  "&a"+u.getMSG(cfgb.get(i).txt)+"&2 "+u.EnDis(cfgb.get(i).v);
 		i = getIndexCfgI(key);
-		if (i>=0) return  "&a"+u.MSG(cfgi.get(i).txt)+"&2 "+cfgi.get(i).v;
+		if (i>=0) return  "&a"+u.getMSG(cfgi.get(i).txt)+"&2 "+cfgi.get(i).v;
 		i = getIndexCfgF(key);
-		if (i>=0) return  "&a"+u.MSG(cfgf.get(i).txt)+"&2 "+cfgf.get(i).v;
+		if (i>=0) return  "&a"+u.getMSG(cfgf.get(i).txt)+"&2 "+cfgf.get(i).v;
 		i = getIndexCfgS(key);
-		if (i>=0) return  "&a"+u.MSG(cfgs.get(i).txt)+"&2 "+cfgs.get(i).v;
-		return "&4"+u.MSG("msg_keyunknown",key,'c','4');
+		if (i>=0) return  "&a"+u.getMSG(cfgs.get(i).txt)+"&2 "+cfgs.get(i).v;
+		return "&4"+u.getMSG("msg_keyunknown",'c','4',key);
 	}
 
 	public void printParam(Player p, String key){
-		u.PrintPxMsg(p, getDescription (key));
+		u.printPxMsg(p, getDescription (key));
 	}
 
 
@@ -1584,20 +1701,20 @@ public class MonsterFix extends JavaPlugin{
 
 
 			for (MFBool c : cfgb) {
-				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<on|off> (default: "+c.v+")");
+				hlp.set(c.grp+"."+u.getMSGnc(c.txt)+".command","/mfix "+c.name+"=<on|off> (default: "+c.v+")");
 
 			}
 
 			for (MFInt c : cfgi) {
-				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<integer value> (default: "+c.v+")");
+				hlp.set(c.grp+"."+u.getMSGnc(c.txt)+".command","/mfix "+c.name+"=<integer value> (default: "+c.v+")");
 			}
 
 			for (MFFloat c : cfgf) {
-				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<float value> (default: "+c.v+")");
+				hlp.set(c.grp+"."+u.getMSGnc(c.txt)+".command","/mfix "+c.name+"=<float value> (default: "+c.v+")");
 			}
 
 			for (MFStr c : cfgs) {
-				hlp.set(c.grp+"."+u.MSGnc(c.txt)+".command","/mfix "+c.name+"=<string> (default: "+c.v+")");
+				hlp.set(c.grp+"."+u.getMSGnc(c.txt)+".command","/mfix "+c.name+"=<string> (default: "+c.v+")");
 			}
 
 			hlp.save(f);

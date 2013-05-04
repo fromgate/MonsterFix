@@ -5,23 +5,23 @@
  *    
  *  This file is part of MonsterFix
  *  
- *  WeatherMan is free software: you can redistribute it and/or modify
+ *  MonsterFix is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  WeatherMan is distributed in the hope that it will be useful,
+ *  MonsterFix is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with WeatherMan.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with MonsterFix.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 
 
-package fromgate.mccity.monsterfix;
+package me.fromgate.monsterfix;
 
 import java.util.HashMap;
 import org.bukkit.entity.Player;
@@ -40,6 +40,8 @@ import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 public class MFFreeze implements Listener {
@@ -150,8 +152,14 @@ public class MFFreeze implements Listener {
 	}
 
 	protected boolean Freeze (Player p){
+		/*if (!plg.cncfreeze) return false;
+		if (p.hasPermission("monsterfix.cheats.unfreeze")) return false;*/
 		if (plg.cncfreeze&&(!p.hasPermission("monsterfix.cheats.unfreeze"))){
 			fplayers.put(p, System.currentTimeMillis());
+			if (plg.cncslow) {
+				p.addPotionEffect(new PotionEffect (PotionEffectType.SLOW,plg.cncslowtime, 30000));
+				p.addPotionEffect(new PotionEffect (PotionEffectType.SLOW_DIGGING,plg.cncslowtime, 30000));
+			}
 			return true;
 		}
 		return false;

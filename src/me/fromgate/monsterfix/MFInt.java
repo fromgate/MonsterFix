@@ -5,32 +5,32 @@
  *    
  *  This file is part of MonsterFix
  *  
- *  WeatherMan is free software: you can redistribute it and/or modify
+ *  MonsterFix is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  WeatherMan is distributed in the hope that it will be useful,
+ *  MonsterFix is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with WeatherMan.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with MonsterFix.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 
 
-package fromgate.mccity.monsterfix;
+package me.fromgate.monsterfix;
 
-public class MFBool {
+public class MFInt {
 	String name;
 	String grp="n/a";
-	boolean v=false;
+	int v=-1;
 	String node ="";
 	String txt ="";
-
-	public MFBool (String name, String grp, boolean v, String node, String descr) {
+	
+	public MFInt (String name, String grp, int v, String node, String descr) {
 		this.name=name;
 		this.grp = grp;
 		this.v=v;
@@ -53,9 +53,9 @@ public class MFBool {
 			return true;
 		if (obj == null)
 			return false;
-		if (!(obj instanceof MFBool))
+		if (!(obj instanceof MFInt))
 			return false;
-		MFBool other = (MFBool) obj;
+		MFInt other = (MFInt) obj;
 		if (grp == null) {
 			if (other.grp != null)
 				return false;
@@ -68,6 +68,9 @@ public class MFBool {
 			return false;
 		return true;
 	}
+
+
+		
 	
-	
+		
 }

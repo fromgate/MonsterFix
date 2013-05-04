@@ -5,22 +5,22 @@
  *    
  *  This file is part of MonsterFix
  *  
- *  WeatherMan is free software: you can redistribute it and/or modify
+ *  MonsterFix is free software: you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  WeatherMan is distributed in the hope that it will be useful,
+ *  MonsterFix is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with WeatherMan.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with MonsterFix.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 
-package fromgate.mccity.monsterfix;
+package me.fromgate.monsterfix;
 
 import java.util.Iterator;
 import org.bukkit.entity.Player;
@@ -78,7 +78,6 @@ public class MFUtil extends FGUtilCore {
 		addMSG("msg_eggheadshot","Ooops! %1% throws an egg in your head!");
 		addMSG("msg_hookheadshot","Ooops! %1% caught you on the hook!");
 		addMSG("msg_fishfarm","Hmm... Maybe there's no fish here...");
-		
 		addMSG("someone","Someone");
 		addMSG("msg_headshot!","Headshot!");
 		addMSG("msg_shortbreath","You're short of breath!");
@@ -86,28 +85,18 @@ public class MFUtil extends FGUtilCore {
 		addMSG("msg_placedenied","You cannot place %1% here");
 		addMSG("msg_savingall","Saving all...");
 		addMSG("msg_bedonce","You respawned at bed. Don't forget to sleep here again or next time you will wake up at world's spawn");
-		
-		
-	/*	
-		addMSG("","");
-		addMSG("","");
-		addMSG("","");
-		addMSG("","");
-		addMSG("","");
-		addMSG("","");
-		addMSG("",""); */
 	}
 
 
 	public void PrintHlp(Player p){
-		PrintMsg(p,"&6&lMonsterFix "+des.getVersion()+" | " +MSG("msg_help"));
-		PrintMSG(p, "mfix_help","/mfix help"); 
-		PrintMSG(p, "mfix_cfg","/mfix cfg"); 
-		PrintMSG(p, "mfix_rst","/mfix rst"); 
-		PrintMSG(p, "mfix_param","/mfix <parameter>"); 
-		PrintMSG(p, "mfix_paramval","/mfix <parameter>=<value>");
-		PrintMSG(p, "mfix_group","/mfix <group>"); 
-		PrintMSG(p, "mfix_grouponoff","/mfix <group>=<on/off>"); 
+		printMsg(p,"&6&lMonsterFix "+des.getVersion()+" | " +getMSG("msg_help"));
+		printMSG(p, "mfix_help","/mfix help"); 
+		printMSG(p, "mfix_cfg","/mfix cfg"); 
+		printMSG(p, "mfix_rst","/mfix rst"); 
+		printMSG(p, "mfix_param","/mfix <parameter>"); 
+		printMSG(p, "mfix_paramval","/mfix <parameter>=<value>");
+		printMSG(p, "mfix_group","/mfix <group>"); 
+		printMSG(p, "mfix_grouponoff","/mfix <group>=<on/off>"); 
 		String str = "";
 		Iterator<String> itr = plg.cfggroup.keySet().iterator();
 		while (itr.hasNext()){
@@ -115,17 +104,17 @@ public class MFUtil extends FGUtilCore {
 			if (str.isEmpty()) str = EnDis(grp, plg.cfggroup.get(grp));
 			else str = str+", "+EnDis(grp, plg.cfggroup.get(grp));
 		}
-		PrintMSG (p, "msg_grouplist", str); 
+		printMSG (p, "msg_grouplist", str); 
 		plg.DemoColor(p);
 	}
 
 	public void PrintCfg(Player p){
-		PrintMsg(p,"&6&lMonsterFix v"+des.getVersion()+" &r&6| "+MSG("configuration",'6')+"&6:");
-		PrintMSG(p, "msg_cfgline1",plg.mspmobs.size()+";"+plg.mobdmg.size()+";"+plg.butch.size()); //	p.sendMessage(ChatColor.GREEN+"Mobs. M/Spawned: "+ChatColor.AQUA+Integer.toString(plg.mspmobs.size())+ChatColor.GREEN+" Damaged: "+ChatColor.AQUA+Integer.toString(plg.mobdmg.size())+ChatColor.GREEN+" Butcheries: "+ChatColor.AQUA+Integer.toString(plg.butch.size()));
-		PrintMSG(p, "msg_cfgline2",plg.trashcan.size()+";"+plg.snowtrails.size()+";"+plg.fl.fplayers.size()); //p.sendMessage(ChatColor.GREEN+"Trashcan: "+ChatColor.AQUA+Integer.toString(plg.trashcan.size())+ChatColor.GREEN+" Trails: "+ChatColor.AQUA+Integer.toString(plg.snowtrails.size())+ChatColor.GREEN+" Freezed players: "+ChatColor.AQUA+Integer.toString(plg.fl.fplayers.size()));
-		PrintMsg(p,MSG("msg_cfgthreads")+" "+EnDis(MSGnc("save"),plg.tid_save_b)+"&2, "+EnDis(MSGnc("mobs"),plg.tid_mclear_b)+"&2, "
-				+EnDis(MSGnc("player dmg"),plg.tid_pdmg_b)+"&2, "
-				+EnDis(MSGnc("trash"),plg.tid_trash_b));
+		printMsg(p,"&6&lMonsterFix v"+des.getVersion()+" &r&6| "+getMSG("configuration",'6')+"&6:");
+		printMSG(p, "msg_cfgline1",-1/*plg.mspmobs.size()*/,-1 /*plg.mobdmg.size()*/,plg.butch.size()); 
+		printMSG(p, "msg_cfgline2",plg.trashcan.size(),plg.snowtrails.size(),plg.fl.fplayers.size()); 
+		printMsg(p,getMSG("msg_cfgthreads")+" "+EnDis(getMSGnc("save"),plg.tid_save_b)+"&2, "+EnDis(getMSGnc("mobs"),plg.tid_mclear_b)+"&2, "
+				+EnDis(getMSGnc("player dmg"),plg.tid_pdmg_b)+"&2, "
+				+EnDis(getMSGnc("trash"),plg.tid_trash_b));
 		String str = "";
 		Iterator<String> itr = plg.cfggroup.keySet().iterator();
 		while (itr.hasNext()){
@@ -133,10 +122,10 @@ public class MFUtil extends FGUtilCore {
 			if (str.isEmpty()) str = EnDis(grp, plg.cfggroup.get(grp));
 			else str = str+", "+EnDis(grp, plg.cfggroup.get(grp));
 		}
-		PrintMSG(p, "msg_grouplist",str);
+		printMSG(p, "msg_grouplist",str);
 		p.sendMessage(" ");
-		PrintMSG (p,"msg_cmdexample1","/mfix <groupname>",'8','8'); 
-		PrintMSG (p,"msg_cmdexample2","/mfix <groupname>=<on/off>",'8','8');
+		printMSG (p,"msg_cmdexample1",'8','8',"/mfix <groupname>"); 
+		printMSG (p,"msg_cmdexample2",'8','8',"/mfix <groupname>=<on/off>");
 	}
 	
 	

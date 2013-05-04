@@ -1,6 +1,6 @@
 name: MonsterFix
-main: fromgate.mccity.monsterfix.MonsterFix
-version: 0.3.2
+main: me.fromgate.monsterfix.MonsterFix
+version: 0.3.5
 author: fromgate, fromgate@gmail.com
 commands:
    mfix:
