@@ -390,13 +390,6 @@ public class MFPlayerListener implements Listener {
 					}	
 				}
 			}
-
-
-			/*
-			if((ln.length>0)&&(u.isWordInList(ln[0].replaceFirst("/", ""), plg.cfgS("blockcmdlist")))&&(!p.hasPermission("monsterfix.command."+ln[0]))){
-				u.printMSG(p,"msg_blockcmd",ln[0],'c','e'); 
-				event.setCancelled(true);
-			} */
 		}
 
 		if (plg.cfgB("cmdcolor")){
@@ -442,14 +435,6 @@ public class MFPlayerListener implements Listener {
 		
 		if ((plg.msdrop)&&(MFMeta.hasMeta(mob, "mspmobs")))
 			clrdrp = true;
-		
-		/*if ((plg.msdrop)&&(plg.mspmobs.contains(mob))) {
-			plg.mspmobs.remove(mob);
-			clrdrp = true;
-		}*/
-		// моб в списке "ударенных"
-		//if (plg.mobdmg.contains(mob)) plg.mobdmg.remove(mob);
-		
 		// скотобойни
 		if ((plg.butchery)&&(!u.isWordInList(mname, plg.btchexcept))){
 			if (plg.btchprogres) {
@@ -522,11 +507,6 @@ public class MFPlayerListener implements Listener {
 		}
 	}
 
-	/*
-	 * EntityDamageEvent
-	 * 
-	 */
-
 
 	@EventHandler(priority=EventPriority.LOWEST)
 	public void onEntityDamageMob (EntityDamageEvent event) {
@@ -540,9 +520,6 @@ public class MFPlayerListener implements Listener {
 			else MFMeta.setMeta(e, "mobdmg");
 		}
 	}
-
-
-
 
 	@EventHandler(priority=EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onPlayerDamageInCreative (EntityDamageEvent event) {
@@ -708,8 +685,5 @@ public class MFPlayerListener implements Listener {
 			}
 		}
 	}
-
-
-
 
 }

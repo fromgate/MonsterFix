@@ -170,7 +170,6 @@ public class MFCommands implements CommandExecutor{
 						}
 					}
 					if (cfgchanged) {
-						u.BC("Save!!!");
 						plg.SaveCfg();
 						plg.UpdateFastVar();
 						plg.Rst();

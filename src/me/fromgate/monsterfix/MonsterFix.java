@@ -177,10 +177,10 @@ package me.fromgate.monsterfix;
  *  
  *  0.3.5
  *  + Блокировка "подкоманд"
- *  + falldmg - отключение повреждения при падении
+ *  + falldmg - отключение повреждения при падении 
  *  + исправлен mobfall
- *  + оптимизация - убрал несколько регулярных задач
- *  + cncslow, cncslowtime - дополнтительная тормозилка глитчеров
+ *  + оптимизация - убрал несколько регулярных задач 
+ *  + cncslow, cncslowtime - дополнтительная тормозилка глитчеров 
  *  
  *  
  * TODO
@@ -228,7 +228,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -448,14 +447,7 @@ public class MonsterFix extends JavaPlugin{
 	List<MFFloat> cfgf = new ArrayList<MFFloat>();
 	HashMap<String, Boolean> cfggroup = new HashMap<String, Boolean>();
 	HashMap<String, String> perms = new HashMap<String, String>();
-	
-	
-
-	public FileConfiguration config;
-	
 	File directory;
-
-
 	private Logger log = Logger.getLogger("Minecraft");
 	private MFBlockListener bl;
 	private MFPlayerListener pl;
@@ -539,7 +531,7 @@ public class MonsterFix extends JavaPlugin{
 		addBool("saveall","system",true,"save-all.enable","Periodically run save-all command");
 
 		addStr("language","system","english","monsterfix.language","MonsterFix translation language");
-
+		addBool("languagesave","system",false,"monsterfix.language-save","Save MonsterFix translation to a separated file");
 
 		addInt("saveint","system",30,"save-all.time-interval","Saving-all interval (minutes)");
 		addBool("savemsg","system",true,"save-all.show-message","Show saving-all message");
@@ -842,9 +834,6 @@ public class MonsterFix extends JavaPlugin{
 		wsmr=cfgF("wsmr");
 		wsfire=cfgB("wsfire");
 
-		
-		
-
 		detonate = cfgB("detonate");
 		dexplchance = cfgI("dexplchance");
 		dfirechance = cfgI("dfirechance");
@@ -920,7 +909,6 @@ public class MonsterFix extends JavaPlugin{
 		mapshowid = cfgB("mapshowid");
 		unexplode = cfgB("unexplode");
 		unexblock = cfgS("unexblock");
-		
 		InitBiomeList();
 	}
 
@@ -991,11 +979,10 @@ public class MonsterFix extends JavaPlugin{
 
 	@Override
 	public void onEnable() {
-		config = getConfig();
-		language = config.getString("system.monsterfix.language", "english");
+		language = getConfig().getString("system.monsterfix.language", "english");
+		
 
-
-		u = new MFUtil(this, config.getBoolean("monsterfix.version-check",true),
+		u = new MFUtil(this, getConfig().getBoolean("monsterfix.version-check",true),
 				false,language,"monsterfix","MonsterFix","mfix","&3[mfix]&a "); //проверка версий и metrics
 
 		bl = new MFBlockListener(this);
@@ -1009,7 +996,8 @@ public class MonsterFix extends JavaPlugin{
 
 		InitCfg();
 		FillGroups();
-		if (config.getBoolean("system.monsterfix.language-save", false)) u.SaveMSG();
+		
+		if (getConfig().getBoolean("system.monsterfix.language-save", false)) u.SaveMSG();
 
 		LoadCfg();
 		SaveCfg();
@@ -1056,17 +1044,6 @@ public class MonsterFix extends JavaPlugin{
 		for (int i = 0; i<cfgs.size();i++) if (!cfggroup.containsKey(cfgs.get(i).grp)) cfggroup.put(cfgs.get(i).grp, true);
 	}
 
-	/*
-	protected void TickMobClear() {
-		if (mspmobs.size()>0) 
-			for (int i = mspmobs.size()-1;i>=0;i--)
-				if (mspmobs.get(i).isDead()) mspmobs.remove(i);
-		
-		if (mobdmg.size()>0)
-			for (int i = mobdmg.size()-1;i>=0;i--)
-				if (mobdmg.get(i).isDead()) mobdmg.remove(i); 
-
-	}*/
 
 	protected void UnButch(){
 		if (butch.size()>0)
@@ -1103,32 +1080,32 @@ public class MonsterFix extends JavaPlugin{
 	}
 
 	public void SaveCfg() {
-		config.options().header("MonsterFix v"+u.des.getVersion()+" configuration file");
+		
+		getConfig().options().header("MonsterFix v"+u.des.getVersion()+" configuration file");
 		Set<Entry<String, Boolean>> entries = cfggroup.entrySet(); 
 		Iterator<Entry<String, Boolean>> itr = entries.iterator();
 		while (itr.hasNext()){
 			Map.Entry<String, Boolean> ent = (Entry<String, Boolean>) itr.next();
-			config.set (ent.getKey()+".enable", ent.getValue());
+			getConfig().set (ent.getKey()+".enable", ent.getValue());
 		}
 		for (MFBool c : cfgb) {
-			config.set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
-			config.set(c.grp+"."+c.node,c.v);
+			getConfig().set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
+			getConfig().set(c.grp+"."+c.node,c.v);
 		}
 		for (MFInt c : cfgi) {
-			config.set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
-			config.set(c.grp+"."+c.node,c.v);
+			getConfig().set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
+			getConfig().set(c.grp+"."+c.node,c.v);
 		}
 		for (MFStr c : cfgs) {
 			if (((c.node.equalsIgnoreCase("codepage-fix.wrong-symbols"))||(c.node.equalsIgnoreCase("codepage-fix.right-symbols")))&&(!cfgB("cpfix"))) continue;
-			config.set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
-			config.set(c.grp+"."+c.node,c.v);
+			getConfig().set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
+			getConfig().set(c.grp+"."+c.node,c.v);
 		}
 		for (MFFloat c : cfgf) {
-			config.set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
-			config.set(c.grp+"."+c.node,c.v);
+			getConfig().set(c.grp+"."+c.node+"_description",u.getMSGnc(c.txt));
+			getConfig().set(c.grp+"."+c.node,c.v);
 		}
-
-		saveConfig(); 		
+		saveConfig();
 	}
 
 
@@ -1196,6 +1173,9 @@ public class MonsterFix extends JavaPlugin{
 		return (fullarm/24*7);
 	}
 
+	/*
+	 * TODO Надо полностью переделать (с точки зрения персональных "задач")
+	 */
 	public void TickPlayerDmg(){
 		if (Bukkit.getOnlinePlayers().length>0) {
 			skipdmg++;
@@ -1441,11 +1421,8 @@ public class MonsterFix extends JavaPlugin{
 		if (tid_pdmg_b) Bukkit.getScheduler().cancelTask(tid_pdmg);
 		if (tid_trash_b) Bukkit.getScheduler().cancelTask(tid_trash);
 
-		//mobdmg.clear();
-		//mspmobs.clear();
 		trashcan.clear();
 		fl.fplayers.clear();
-		//canceler.clear();
 		butch.clear();
 		snowtrails.clear();
 		minute_tid = 0;
@@ -1522,7 +1499,6 @@ public class MonsterFix extends JavaPlugin{
 			str = str+" §r§8(&r - "+u.getMSG("msg_reset")+")";
 			u.printMSG(p, "msg_allowinchat");
 			p.sendMessage(str);
-			//u.PrintMsg(p, ChatColor.DARK_GREEN+"&r - "+ u.MSG("msg_toreset"));
 		}
 
 	}
@@ -1595,8 +1571,8 @@ public class MonsterFix extends JavaPlugin{
 		if (p.getGameMode() == GameMode.SURVIVAL) {
 			p.setAllowFlight(!p.getAllowFlight());
 			p.setFlying(p.getAllowFlight());
-			u.printEnDis (p,"msg_flymode",p.getAllowFlight());//	p.sendMessage(px+"Fly-mode "+u.EnDis(p.getAllowFlight()));
-		} else u.printMSG(p, "msg_flymodecreative"); //p.sendMessage(px+" You are in creative mode and you can fly :)");
+			u.printEnDis (p,"msg_flymode",p.getAllowFlight());//	
+		} else u.printMSG(p, "msg_flymodecreative"); 
 	}
 
 	public Biome BiomeByName (String bn){
@@ -1627,19 +1603,6 @@ public class MonsterFix extends JavaPlugin{
 		if (prjn == null) prjn = prj.getType().toString();
 		return prjn.toLowerCase();
 	}
-
-	/*	public boolean PlaceBlock(Location loc, Player p, Material newType, byte newData, boolean phys){
-		return PlaceBlock (loc.getBlock(),p,newType,newData, phys);
-	}
-
-	public boolean PlaceBlock(Block block, Player p, Material newType, byte newData, boolean phys){
-		BlockState state = block.getState();
-		block.setTypeIdAndData(newType.getId(), newData, phys);
-		BlockPlaceEvent event = new BlockPlaceEvent(state.getBlock(), state, block, p.getItemInHand(), p, true);
-		this.getServer().getPluginManager().callEvent(event);
-		if (event.isCancelled()) state.update(true);
-		return event.isCancelled();
-	} */
 
 
 	protected String recodeText (String str){

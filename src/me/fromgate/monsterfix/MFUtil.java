@@ -110,7 +110,7 @@ public class MFUtil extends FGUtilCore {
 
 	public void PrintCfg(Player p){
 		printMsg(p,"&6&lMonsterFix v"+des.getVersion()+" &r&6| "+getMSG("configuration",'6')+"&6:");
-		printMSG(p, "msg_cfgline1",-1/*plg.mspmobs.size()*/,-1 /*plg.mobdmg.size()*/,plg.butch.size()); 
+		printMSG(p, "msg_cfgline1","N/A","N/A",plg.butch.size()); 
 		printMSG(p, "msg_cfgline2",plg.trashcan.size(),plg.snowtrails.size(),plg.fl.fplayers.size()); 
 		printMsg(p,getMSG("msg_cfgthreads")+" "+EnDis(getMSGnc("save"),plg.tid_save_b)+"&2, "+EnDis(getMSGnc("mobs"),plg.tid_mclear_b)+"&2, "
 				+EnDis(getMSGnc("player dmg"),plg.tid_pdmg_b)+"&2, "
