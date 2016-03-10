@@ -1,0 +1,9 @@
+name: MonsterFix
+main: me.fromgate.monsterfix.MonsterFix
+version: 0.4.4
+author: fromgate, fromgate@gmail.com
+commands:
+   mfix:
+      description: MonsterFix configuration command
+      usage: |
+           /mfix help
